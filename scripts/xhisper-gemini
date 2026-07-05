@@ -159,7 +159,7 @@ polish_with_gemini() {
     -d "{
       \"contents\": [{
         \"parts\": [{
-          \"text\": \"Polish this text for clarity and natural flow. Fix grammar, restructure sentences if needed, and make it sound like a well-written message. Keep the meaning intact. Return ONLY the polished text, no explanations or intro:\\n\\n$text\"
+          \"text\": \"Fix any obvious spelling, grammar, or transcription errors in this dictated text. Do NOT rephrase, restructure sentences, or change the tone. Preserve the original wording as much as possible. Only fix things that are clearly wrong. Return ONLY the corrected text, no explanations:\\n\\n$text\"
         }]
       }]
     }")
