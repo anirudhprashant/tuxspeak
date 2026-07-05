@@ -26,7 +26,7 @@ long_recording_threshold=1000
 transcription_prompt=""
 silence_threshold=-50
 silence_percentage=95
-non_ascii_initial_delay=0.1
+non_ascii_initial_delay=0.15
 non_ascii_default_delay=0.025
 
 CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/xhisper/xhisperrc"
@@ -154,7 +154,7 @@ transcribe() {
 polish_with_gemini() {
   local text="$1"
 
-  local response=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=$API_KEY" \
+  local response=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$API_KEY" \
     -H "Content-Type: application/json" \
     -d "{
       \"contents\": [{
@@ -168,22 +168,6 @@ polish_with_gemini() {
 
   # Try to extract polished text, fallback to alternative paths
   local polished=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text // .candidates[0].content.parts[0].string // empty' | sed 's/^```\|```$//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-  # If still empty, try a different model
-  if [ -z "$polished" ] || [ "$polished" = "null" ] || [ "$polished" = "empty" ]; then
-    echo "DEBUG: Primary model failed, trying gemini-1.5-flash" >> "$LOGFILE"
-    response=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$API_KEY" \
-      -H "Content-Type: application/json" \
-      -d "{
-        \"contents\": [{
-          \"parts\": [{
-            \"text\": \"Polish this text for clarity. Fix grammar. Return ONLY the polished text:\\n\\n$text\"
-          }]
-        }]
-      }")
-    echo "DEBUG: Gemini 1.5 Flash response: $response" >> "$LOGFILE"
-    polished=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text // empty' | sed 's/^```\|```$//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-  fi
 
   echo "$polished"
 }

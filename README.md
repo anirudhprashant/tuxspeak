@@ -152,7 +152,7 @@ cp /usr/local/share/xhisper/default_xhisperrc ~/.config/xhisper/xhisperrc
 | `long-recording-threshold` | 1000 | Seconds before switching to large Whisper model |
 | `silence-threshold` | -50 | dB threshold for silence detection |
 | `silence-percentage` | 95 | % of audio below threshold to trigger silence cancel |
-| `non-ascii-initial-delay` | 0.1 | Delay before first non-ASCII char paste (seconds) |
+| `non-ascii-initial-delay` | 0.15 | Delay before first non-ASCII char paste (seconds) |
 | `non-ascii-default-delay` | 0.025 | Delay between non-ASCII char pastes |
 
 ## Troubleshooting
@@ -177,7 +177,7 @@ This means it works in **any application** — no browser extension, no accessib
 
 ## License
 
-**GNU General Public License v3.0** — free for everyone, forever. No selling, no proprietary forks.
+**GNU General Public License v3.0** — free for everyone, forever. Any modifications or forks must also be open source under GPL.
 
 The xhisper C core (`xhisper-src/`) is copyright xhisper contributors under MIT. The combined work (TuxSpeak wrapper, scripts, installer) is GPL 3.0.
 

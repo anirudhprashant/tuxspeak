@@ -49,15 +49,15 @@ case $RET in
     TMPFILE=$(mktemp)
     CURRENT_DATE=""
     CURRENT_TEXT=""
-    IN_POLISHED=0
+    in_polished=0
 
     # Read file in reverse, extract entries
     while IFS= read -r line; do
       if [[ "$line" =~ ^Polished: ]]; then
-        IN_POLISHED=1
+        in_polished=1
         continue
       elif [[ "$line" =~ ^Raw ]]; then
-        IN_POLISHED=0
+        in_polished=0
         continue
       elif [[ "$line" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2} ]]; then
         CURRENT_DATE="$line"
@@ -74,7 +74,7 @@ case $RET in
         continue
       fi
 
-      if [ $IN_POLISHED -eq 1 ] && [ -n "$line" ]; then
+      if [ $in_polished -eq 1 ] && [ -n "$line" ]; then
         CURRENT_TEXT="$line"
       fi
     done < "$HISTORY_FILE"
