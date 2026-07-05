@@ -7,7 +7,7 @@ echo ""
 # Check dependencies
 echo "Checking dependencies..."
 MISSING=""
-for dep in curl jq ffmpeg gcc make yad xdotool xclip; do
+for dep in curl jq ffmpeg gcc make yad xdotool xclip wl-clipboard; do
   if ! command -v "$dep" &>/dev/null; then
     MISSING="$MISSING $dep"
   fi
@@ -42,7 +42,6 @@ cp "$SCRIPT_DIR/scripts/xhisper-gemini" ~/.local/bin/
 cp "$SCRIPT_DIR/scripts/xhisper-gui" ~/.local/bin/
 cp "$SCRIPT_DIR/scripts/xhisper-history" ~/.local/bin/
 cp "$SCRIPT_DIR/scripts/xhisper-last" ~/.local/bin/
-cp "$SCRIPT_DIR/scripts/xhisper-polished" ~/.local/bin/
 chmod +x ~/.local/bin/xhisper-*
 
 # Copy desktop entries

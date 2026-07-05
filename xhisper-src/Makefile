@@ -16,9 +16,11 @@ test: test.c
 
 install: xhispertool xhisper.sh
 	install -d $(DESTDIR)$(BINDIR)
+	install -d $(DESTDIR)$(PREFIX)/share/xhisper
 	install -m 755 xhispertool $(DESTDIR)$(BINDIR)/xhispertool
 	ln -sf xhispertool $(DESTDIR)$(BINDIR)/xhispertoold
 	install -m 755 xhisper.sh $(DESTDIR)$(BINDIR)/xhisper
+	install -m 644 default_xhisperrc $(DESTDIR)$(PREFIX)/share/xhisper/default_xhisperrc
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/xhisper
