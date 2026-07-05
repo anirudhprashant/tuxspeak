@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# xhisper-history - View dictation history
+HISTORY_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/xhisper/history.txt"
+
+if [ ! -f "$HISTORY_FILE" ]; then
+  echo "No history found yet. Start dictating to build history."
+  exit 0
+fi
+
+# Show last 500 lines (adjust as needed)
+tail -n 500 "$HISTORY_FILE"

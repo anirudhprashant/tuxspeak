@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=xhisper History
+Comment=View dictation history
+Exec=gnome-terminal -- xhisper-history
+Icon=accessories-text-editor
+Terminal=false
+Categories=Utility;

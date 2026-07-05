@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# xhisper-gui - Show last dictation or full history
+HISTORY_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/xhisper/history.txt"
+
+if [ ! -f "$HISTORY_FILE" ] || [ ! -s "$HISTORY_FILE" ]; then
+  yad --info --title="xhisper" --text="No history found yet." \
+    --width=300 --height=100 --fixed --on-top --undecorated
+  exit 0
+fi
+
+# Primary monitor: 1920x1080 at 0+0
+# Position: bottom-right of primary, above dock
+# Position: exact coordinates from user (xdotool)
+X_POS=892
+Y_POS=692
+
+# Get last polished transcription
+LAST=$(grep -A 1 "^Polished:" "$HISTORY_FILE" | tail -2 | grep -v "^Polished:" | grep -v "^$" | head -1)
+[ -z "$LAST" ] && LAST="No recent transcription found"
+
+# Truncate for display if too long
+DISPLAY_TEXT="$LAST"
+if [ ${#DISPLAY_TEXT} -gt 200 ]; then
+  DISPLAY_TEXT="${DISPLAY_TEXT:0:200}..."
+fi
+
+# Show popup with buttons using yad --form
+ACTION=$(yad --form --title="xhisper" \
+  --text="<b>Last dictation:</b>\n\n$DISPLAY_TEXT" \
+  --width=340 --height=280 \
+  --geometry=340x280+$X_POS+$Y_POS \
+  --button="📋 Copy:2" \
+  --button="📚 History:3" \
+  --borders=12 --on-top --skip-taskbar \
+  2>/dev/null)
+
+RET=$?
+
+case $RET in
+  2) # Copy — silent, just copy and close
+    if command -v xclip &>/dev/null; then
+      echo -n "$LAST" | xclip -selection clipboard
+    elif command -v wl-copy &>/dev/null; then
+      echo -n "$LAST" | wl-copy
+    fi
+    ;;
+  3) # History
+    # Build history text (newest first)
+    TMPFILE=$(mktemp)
+    CURRENT_DATE=""
+    CURRENT_TEXT=""
+    IN_POLISHED=0
+
+    # Read file in reverse, extract entries
+    while IFS= read -r line; do
+      if [[ "$line" =~ ^Polished: ]]; then
+        IN_POLISHED=1
+        continue
+      elif [[ "$line" =~ ^Raw ]]; then
+        IN_POLISHED=0
+        continue
+      elif [[ "$line" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2} ]]; then
+        CURRENT_DATE="$line"
+        continue
+      elif [[ "$line" =~ ^━━ ]]; then
+        # Write previous entry
+        if [ -n "$CURRENT_TEXT" ] && [ -n "$CURRENT_DATE" ]; then
+          echo "[$CURRENT_DATE]" >> "$TMPFILE"
+          echo "$CURRENT_TEXT" >> "$TMPFILE"
+          echo "" >> "$TMPFILE"
+          CURRENT_TEXT=""
+          CURRENT_DATE=""
+        fi
+        continue
+      fi
+
+      if [ $IN_POLISHED -eq 1 ] && [ -n "$line" ]; then
+        CURRENT_TEXT="$line"
+      fi
+    done < "$HISTORY_FILE"
+
+    # Write last entry if exists
+    if [ -n "$CURRENT_TEXT" ] && [ -n "$CURRENT_DATE" ]; then
+      echo "[$CURRENT_DATE]" >> "$TMPFILE"
+      echo "$CURRENT_TEXT" >> "$TMPFILE"
+      echo "" >> "$TMPFILE"
+    fi
+
+    # Reverse so newest is on top
+    tac "$TMPFILE" > "${TMPFILE}.rev"
+
+    yad --text-info --title="xhisper History" \
+      --filename="${TMPFILE}.rev" \
+      --width=380 --height=400 \
+      --geometry=380x400+$X_POS+$((Y_POS - 60)) \
+      --button="gtk-close:1" \
+      --borders=10 --on-top --skip-taskbar \
+      2>/dev/null
+
+    rm -f "$TMPFILE" "${TMPFILE}.rev"
+    ;;
+esac

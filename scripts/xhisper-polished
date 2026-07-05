@@ -1,0 +1,37 @@
+#!/usr/bin/bash
+
+# xhisper-polished - Record speech → transcribe → AI polish → type at cursor
+# Press to toggle: 1st press = record, 2nd press = stop & paste
+
+[ -f "$HOME/.env" ] && source "$HOME/.env"
+
+if [ -z "$GEMINI_API_KEY" ]; then
+  echo "Error: GEMINI_API_KEY not set. Add it to ~/.env:" >&2
+  echo '  GEMINI_API_KEY=your_gemini_api_key_here' >&2
+  exit 1
+fi
+API_KEY="$GEMINI_API_KEY"
+PID_FILE="/tmp/xhisper-polished.pid"
+AUDIO_FILE="/tmp/xhisper-polished.wav"
+
+# Check if recording
+if [ -f "$PID_FILE" ]; then
+    # Stop recording
+    kill -SIGINT $(cat "$PID_FILE") 2>/dev/null
+    rm -f "$PID_FILE"
+
+    # Wait a moment for xhisper to finish
+    sleep 0.5
+
+    # xhisper will type the raw transcription, but we want to intercept and polish
+    # Since xhisper types directly, we need a different approach
+    echo "Recording stopped. Note: xhisper types directly - this wrapper needs modification."
+    exit 0
+fi
+
+# Start recording (background)
+# We'll capture xhisper output instead of letting it type directly
+xhisper --log > "$AUDIO_FILE.raw" 2>&1 &
+echo $! > "$PID_FILE"
+
+echo "Recording started... press key again to stop"

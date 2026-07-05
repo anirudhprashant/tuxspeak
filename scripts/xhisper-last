@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# xhisper-last - Get the last polished transcription only
+HISTORY_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/xhisper/history.txt"
+
+if [ ! -f "$HISTORY_FILE" ]; then
+  echo "No history found."
+  exit 0
+fi
+
+# Get the last polished transcription (skip empty lines after "Polished:")
+grep -A 1 "^Polished:" "$HISTORY_FILE" | tail -2 | grep -v "^Polished:" | grep -v "^$" | head -1
