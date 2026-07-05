@@ -1,0 +1,6 @@
+.env
+*.wav
+*.log
+*.tar.gz
+xhisper-src/xhispertool
+xhisper-src/xhispertoold

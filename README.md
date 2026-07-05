@@ -1,0 +1,163 @@
+# TuxSpeak
+
+**Dictate anywhere on Linux. Press Alt+Space, speak, get AI-polished text typed at your cursor.**
+
+Record speech → Groq Whisper transcribes → Gemini polishes the text → typed wherever your cursor is. Works in any app: browser, terminal, IDE, chat, email, anywhere you can type.
+
+Built on [xhisper](https://github.com/imaginalnika/xhisper) (MIT), extended with AI polishing, history, and a GUI browser.
+
+## How It Works
+
+```
+Alt+Space → "(recording...)" → speak → Alt+Space again
+  → "(transcribing...)" → Groq Whisper API
+  → "(polishing...)" → Gemini 2.0 Flash
+  → polished text typed at cursor via uinput
+```
+
+- **First press**: starts recording (indicator types "(recording...)")
+- **Second press**: stops, transcribes, polishes, types the result
+- **Silence detection**: if no sound detected, cancels without pasting
+- **History**: every dictation saved with timestamp, raw + polished versions
+
+## Requirements
+
+- Linux with PipeWire (for audio recording)
+- A keyboard (for the Alt+Space shortcut)
+
+### Free API Keys (both free tiers)
+
+| Service | What It Does | Get Key |
+|---------|-------------|---------|
+| **Groq** | Speech-to-text (Whisper) | [console.groq.com/keys](https://console.groq.com/keys) |
+| **Gemini** | Text polishing (Gemini 2.0 Flash) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+
+Both have generous free tiers. No credit card needed.
+
+## Install
+
+```bash
+git clone https://github.com/anirudhprashant/tuxspeak.git
+cd tuxspeak
+./install-xhisper.sh
+```
+
+The installer:
+1. Installs system dependencies (curl, jq, ffmpeg, gcc, make, yad, xdotool, xclip, pipewire)
+2. Prompts for your Groq and Gemini API keys (saved to `~/.env`)
+3. Builds and installs the xhisper C tools (`xhispertool`, `xhispertoold`)
+4. Copies scripts to `~/.local/bin/`
+5. Sets up udev rules for uinput (virtual keyboard)
+6. Adds you to the `input` group
+
+**Reboot after install** if you were added to the `input` group.
+
+## Set Up Keyboard Shortcut
+
+After install, bind the shortcut:
+
+**GNOME:**
+```
+Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts → +
+  Name: WhisperFlow
+  Command: /home/YOUR_USER/.local/bin/xhisper-gemini
+  Shortcut: Alt+Space
+```
+
+First free Alt+Space if GNOME uses it for window menu:
+```bash
+gsettings set org.gnome.desktop.wm.keybindings activate-window-menu "[]"
+```
+
+**KDE:**
+```
+System Settings → Shortcuts → Custom Shortcuts → Edit → New → Global Shortcut → Command/URL
+  Trigger: Alt+Space
+  Action: /home/YOUR_USER/.local/bin/xhisper-gemini
+```
+
+**Other WMs** (i3, Sway, Hyprland, etc.): bind `xhisper-gemini` to Alt+Space in your config.
+
+## Usage
+
+### Dictate (Alt+Space)
+
+Press **Alt+Space** to start recording. Speak. Press **Alt+Space** again to stop and get polished text.
+
+The polished text is typed at your cursor. Raw and polished versions saved to history.
+
+### GUI Popup (`xhisper-gui`)
+
+Shows last dictation with two buttons:
+- **Copy** — copies last dictation to clipboard
+- **History** — opens scrollable history viewer
+
+### Terminal Commands
+
+| Command | What It Does |
+|---------|-------------|
+| `xhisper-gemini` | Record → transcribe → polish → type (same as Alt+Space) |
+| `xhisper-gui` | GUI popup with last dictation + history |
+| `xhisper-last` | Print last polished dictation to terminal |
+| `xhisper-history` | Print full history to terminal |
+
+## Files
+
+| Path | What |
+|------|------|
+| `~/.local/bin/xhisper-gemini` | Main dictation script |
+| `~/.local/bin/xhisper-gui` | GUI popup |
+| `~/.local/bin/xhisper-last` | Last dictation viewer |
+| `~/.local/bin/xhisper-history` | History viewer |
+| `~/.local/share/xhisper/history.txt` | Dictation history (timestamped, raw + polished) |
+| `~/.config/xhisper/xhisperrc` | Optional config (thresholds, timing) |
+| `~/.env` | API keys (Groq + Gemini) |
+
+## Configuration
+
+Copy the default config and tweak:
+
+```bash
+cp /usr/local/share/xhisper/default_xhisperrc ~/.config/xhisper/xhisperrc
+```
+
+| Setting | Default | What |
+|---------|---------|------|
+| `long-recording-threshold` | 1000 | Seconds before switching to large Whisper model |
+| `silence-threshold` | -50 | dB threshold for silence detection |
+| `silence-percentage` | 95 | % of audio below threshold to trigger silence cancel |
+| `non-ascii-initial-delay` | 0.1 | Delay before first non-ASCII char paste (seconds) |
+| `non-ascii-default-delay` | 0.025 | Delay between non-ASCII char pastes |
+
+## Troubleshooting
+
+**"xhispertool not found"** — run `sudo make install` from `xhisper-src/` directory.
+
+**Daemon not running** — `xhispertoold` must be running. The script auto-starts it, or run it manually: `xhispertoold &`
+
+**uinput permission denied** — reboot after install, or: `sudo usermod -aG input $USER` then log out and back in.
+
+**No clipboard tool** — install `xclip` (X11) or `wl-clipboard` (Wayland).
+
+**Recording but no text** — check your Groq API key in `~/.env`. Run `xhisper-gemini` from terminal to see debug output in `/tmp/xhisper-gemini.log`.
+
+**Gemini polishing fails** — check your Gemini API key. The script falls back to raw transcription if polishing fails.
+
+## How It Types
+
+`xhispertool` creates a virtual uinput keyboard device at `/dev/uinput`. ASCII characters are typed as kernel-level key events. Non-ASCII characters (Unicode, emoji) go through the clipboard — copied then pasted via simulated Ctrl+V.
+
+This means it works in **any application** — no browser extension, no accessibility API, no compositor integration needed.
+
+## License
+
+**GNU General Public License v3.0** — free for everyone, forever. No selling, no proprietary forks.
+
+The xhisper C core (`xhisper-src/`) is copyright xhisper contributors under MIT. The combined work (WhisperFlow wrapper, scripts, installer) is GPL 3.0.
+
+See [LICENSE](LICENSE).
+
+## Credits
+
+- [xhisper](https://github.com/imaginalnika/xhisper) by Nika — the C daemon and original dictation tool (MIT)
+- WhisperFlow scripts and AI pipeline by [Anirudh](https://github.com/anirudhprashant)

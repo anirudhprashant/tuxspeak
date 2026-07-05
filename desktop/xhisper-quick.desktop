@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=xhisper Quick
+Comment=View last dictation or full history
+Exec=xhisper-gui
+Icon=audio-input-microphone
+Terminal=false
+Categories=Utility;
