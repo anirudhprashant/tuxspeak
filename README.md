@@ -11,7 +11,7 @@ Built on [xhisper](https://github.com/imaginalnika/xhisper) (MIT), extended with
 ```
 Alt+Space → "(recording...)" → speak → Alt+Space again
   → "(transcribing...)" → Groq Whisper API
-  → "(polishing...)" → Gemini 2.0 Flash
+  → "(polishing...)" → Gemini 3.1 Flash Lite
   → polished text typed at cursor via uinput
 ```
 
@@ -30,7 +30,7 @@ Alt+Space → "(recording...)" → speak → Alt+Space again
 | Service | What It Does | Get Key |
 |---------|-------------|---------|
 | **Groq** | Speech-to-text (Whisper) | [console.groq.com/keys](https://console.groq.com/keys) |
-| **Gemini** | Text polishing (Gemini 2.0 Flash) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| **Gemini** | Text polishing (Gemini 3.1 Flash Lite) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 
 Both have generous free tiers. No credit card needed.
 
