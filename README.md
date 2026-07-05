@@ -36,6 +36,30 @@ Both have generous free tiers. No credit card needed.
 
 ## Install
 
+### Option 1: Paste this into your AI agent
+
+Copy this entire block and paste it into Claude Code, ChatGPT, or any AI coding agent. It will do everything — install dependencies, build from source, set up your keys, configure the shortcut:
+
+```
+I want to install TuxSpeak on my Linux machine. Here's what to do:
+
+1. Clone https://github.com/anirudhprashant/tuxspeak.git
+2. Read the README.md first to understand the project
+3. Run ./install-xhisper.sh — it will prompt me for my Groq and Gemini API keys
+   - Groq free key: https://console.groq.com/keys
+   - Gemini free key: https://aistudio.google.com/apikey
+4. After install, set up the Alt+Space keyboard shortcut:
+   - GNOME: free the Alt+Space binding first with:
+     gsettings set org.gnome.desktop.wm.keybindings activate-window-menu "[]"
+   - Then create a custom shortcut: Name=TuxSpeak, Command=xhisper-gemini, Shortcut=Alt+Space
+   - For other desktop environments/WMs (KDE, i3, Sway, Hyprland), bind Alt+Space to xhisper-gemini using that environment's shortcut config
+5. Start the daemon: nohup xhispertoold &>/dev/null &
+6. Tell me to reboot if I was added to the input group
+7. Verify it works — tell me to press Alt+Space and speak
+```
+
+### Option 2: Install manually
+
 ```bash
 git clone https://github.com/anirudhprashant/tuxspeak.git
 cd tuxspeak
@@ -59,7 +83,7 @@ After install, bind the shortcut:
 **GNOME:**
 ```
 Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts → +
-  Name: WhisperFlow
+  Name: TuxSpeak
   Command: /home/YOUR_USER/.local/bin/xhisper-gemini
   Shortcut: Alt+Space
 ```
@@ -153,11 +177,11 @@ This means it works in **any application** — no browser extension, no accessib
 
 **GNU General Public License v3.0** — free for everyone, forever. No selling, no proprietary forks.
 
-The xhisper C core (`xhisper-src/`) is copyright xhisper contributors under MIT. The combined work (WhisperFlow wrapper, scripts, installer) is GPL 3.0.
+The xhisper C core (`xhisper-src/`) is copyright xhisper contributors under MIT. The combined work (TuxSpeak wrapper, scripts, installer) is GPL 3.0.
 
 See [LICENSE](LICENSE).
 
 ## Credits
 
 - [xhisper](https://github.com/imaginalnika/xhisper) by Nika — the C daemon and original dictation tool (MIT)
-- WhisperFlow scripts and AI pipeline by [Anirudh](https://github.com/anirudhprashant)
+- TuxSpeak scripts and AI pipeline by [Anirudh](https://github.com/anirudhprashant)
