@@ -9,10 +9,10 @@ if [ ! -f "$HISTORY_FILE" ] || [ ! -s "$HISTORY_FILE" ]; then
   exit 0
 fi
 
-# No hardcoded coordinates — use negative geometry offsets
-# Negative = from right/bottom edge (works on any screen resolution)
-GEOM_MAIN="340x280-28-108"   # 28px from right, 108px from bottom (above dock)
-GEOM_HIST="380x400-28-168"   # 28px from right, 168px from bottom
+# Primary monitor: 1920x1080 at 0+0
+# Position: bottom-right of primary, above dock
+X_POS=892
+Y_POS=692
 
 # Get last polished transcription
 LAST=$(grep -A 1 "^Polished:" "$HISTORY_FILE" | tail -2 | grep -v "^Polished:" | grep -v "^$" | head -1)
@@ -28,7 +28,7 @@ fi
 ACTION=$(yad --form --title="xhisper" \
   --text="<b>Last dictation:</b>\n\n$DISPLAY_TEXT" \
   --width=340 --height=280 \
-  --geometry=$GEOM_MAIN \
+  --geometry=340x280+$X_POS+$Y_POS \
   --button="📋 Copy:2" \
   --button="📚 History:3" \
   --borders=12 --on-top --skip-taskbar \
@@ -92,7 +92,7 @@ case $RET in
     yad --text-info --title="xhisper History" \
       --filename="${TMPFILE}.rev" \
       --width=380 --height=400 \
-      --geometry=$GEOM_HIST \
+      --geometry=380x400+$X_POS+$((Y_POS - 60)) \
       --button="gtk-close:1" \
       --borders=10 --on-top --skip-taskbar \
       2>/dev/null

@@ -116,6 +116,8 @@ Shows last dictation with two buttons:
 - **Copy** — copies last dictation to clipboard
 - **History** — opens scrollable history viewer
 
+> **Note:** GUI coordinates are hardcoded for 1920×1080 (bottom-right, above dock). If your screen resolution differs, edit `~/.local/bin/xhisper-gui` and change `X_POS` and `Y_POS`.
+
 ### Terminal Commands
 
 | Command | What It Does |
