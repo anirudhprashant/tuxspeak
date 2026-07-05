@@ -154,7 +154,7 @@ transcribe() {
 polish_with_gemini() {
   local text="$1"
 
-  local response=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$API_KEY" \
+  local response=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=$API_KEY" \
     -H "Content-Type: application/json" \
     -d "{
       \"contents\": [{
