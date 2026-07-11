@@ -2,6 +2,8 @@
 
 **Dictate anywhere on Linux. Press Alt+Space, speak, get AI-polished text typed at your cursor.**
 
+Live site: https://anirudhprashant.github.io/tuxspeak/
+
 Record speech → Groq Whisper transcribes → Gemini polishes the text → typed wherever your cursor is. Works in any app: browser, terminal, IDE, chat, email, anywhere you can type.
 
 Built on [xhisper](https://github.com/imaginalnika/xhisper) (MIT), extended with AI polishing, history, and a GUI browser.
@@ -187,3 +189,9 @@ See [LICENSE](LICENSE).
 
 - [xhisper](https://github.com/imaginalnika/xhisper) by Nika — the C daemon and original dictation tool (MIT)
 - TuxSpeak scripts and AI pipeline by [Anirudh](https://github.com/anirudhprashant)
+
+## Site
+
+![TuxSpeak landing page](tuxspeak-site.png)
+
+Live: https://anirudhprashant.github.io/tuxspeak/
