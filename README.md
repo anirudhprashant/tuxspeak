@@ -13,6 +13,8 @@ Record speech → Groq Whisper transcribes → Gemini polishes the text → type
 
 Built on [xhisper](https://github.com/imaginalnika/xhisper) (MIT), extended with AI polishing, history, and a GUI browser.
 
+![TuxSpeak landing page](tuxspeak-site.png)
+
 ---
 
 ## Quick Start
