@@ -9,8 +9,6 @@
 [![Live Site](https://img.shields.io/badge/View-Landing_Page-10b981)](https://anirudhprashant.github.io/tuxspeak/)
 [![GitHub](https://img.shields.io/badge/GitHub-anirudhprashant%2Ftuxspeak-181717?logo=github)](https://github.com/anirudhprashant/tuxspeak)
 
-![TuxSpeak landing page](tuxspeak-site.png)
-
 Record speech → Groq Whisper transcribes → Gemini polishes the text → typed wherever your cursor is. Works in any app: browser, terminal, IDE, chat, email, anywhere you can type.
 
 Built on [xhisper](https://github.com/imaginalnika/xhisper) (MIT), extended with AI polishing, history, and a GUI browser.
