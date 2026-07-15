@@ -6,7 +6,7 @@
 
 **Dictate anywhere on Linux. Press Alt+Space, speak, get AI-polished text typed at your cursor.**
 
-[![Live Site](https://img.shields.io/badge/View-Landing_Page-10b981)](https://anirudhprashant.github.io/tuxspeak/)
+[![Live Site](https://img.shields.io/badge/View-Landing_Page-10b981)](https://tuxspeak.barestack.org)
 [![GitHub](https://img.shields.io/badge/GitHub-anirudhprashant%2Ftuxspeak-181717?logo=github)](https://github.com/anirudhprashant/tuxspeak)
 
 Record speech → Groq Whisper transcribes → Gemini polishes the text → typed wherever your cursor is. Works in any app: browser, terminal, IDE, chat, email, anywhere you can type.
@@ -105,7 +105,7 @@ cd tuxspeak
 ```
 
 The installer:
-1. Installs system dependencies (`curl`, `jq`, `ffmpeg`, `gcc`, `make`, `yad`, `xdotool`, `xclip`, `pipewire`)
+1. Installs system dependencies (`curl`, `jq`, `ffmpeg`, `gcc`, `make`, `yad`, `xdotool`, `xclip`, `wl-clipboard`, `pipewire`)
 2. Prompts for your Groq and Gemini API keys (saved to `~/.env`)
 3. Builds and installs the xhisper C tools (`xhispertool`, `xhispertoold`)
 4. Copies scripts to `~/.local/bin/`
@@ -246,6 +246,5 @@ See [LICENSE](LICENSE).
 
 ## Links
 
-- 🌐 **Live site**: https://anirudhprashant.github.io/tuxspeak/
+- 🌐 **Live site**: https://tuxspeak.barestack.org
 - 🐙 **GitHub**: https://github.com/anirudhprashant/tuxspeak
-- 📦 **AUR**: `yay -S tuxsay` (if you use Arch)
