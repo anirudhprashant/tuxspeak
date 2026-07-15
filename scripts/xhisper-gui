@@ -1,18 +1,23 @@
 #!/bin/bash
 
 # xhisper-gui - Show last dictation or full history
+# Force GTK's X11 backend so yad --geometry (window positioning) works;
+# Wayland ignores client-set window positions.
+export GDK_BACKEND=x11
+
 HISTORY_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/xhisper/history.txt"
 
 if [ ! -f "$HISTORY_FILE" ] || [ ! -s "$HISTORY_FILE" ]; then
-  yad --info --title="xhisper" --text="No history found yet." \
+  yad --class=xhisper --info --title="xhisper" --text="No history found yet." \
     --width=300 --height=100 --fixed --on-top --undecorated
   exit 0
 fi
 
-# Primary monitor: 1920x1080 at 0+0
-# Position: bottom-right of primary, above dock
+# Position: bottom-right of a 1920x1080 primary monitor, above the dock.
+# Different resolution or layout? Find your own coordinates with xdotool
+# and edit X_POS/Y_POS below (see README).
 X_POS=892
-Y_POS=692
+Y_POS=740
 
 # Get last polished transcription
 LAST=$(grep -A 1 "^Polished:" "$HISTORY_FILE" | tail -2 | grep -v "^Polished:" | grep -v "^$" | head -1)
@@ -25,7 +30,7 @@ if [ ${#DISPLAY_TEXT} -gt 200 ]; then
 fi
 
 # Show popup with buttons using yad --form
-ACTION=$(yad --form --title="xhisper" \
+ACTION=$(yad --class=xhisper --form --title="xhisper" \
   --text="<b>Last dictation:</b>\n\n$DISPLAY_TEXT" \
   --width=340 --height=280 \
   --geometry=340x280+$X_POS+$Y_POS \
@@ -49,15 +54,15 @@ case $RET in
     TMPFILE=$(mktemp)
     CURRENT_DATE=""
     CURRENT_TEXT=""
-    in_polished=0
+    IN_POLISHED=0
 
     # Read file in reverse, extract entries
     while IFS= read -r line; do
       if [[ "$line" =~ ^Polished: ]]; then
-        in_polished=1
+        IN_POLISHED=1
         continue
       elif [[ "$line" =~ ^Raw ]]; then
-        in_polished=0
+        IN_POLISHED=0
         continue
       elif [[ "$line" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2} ]]; then
         CURRENT_DATE="$line"
@@ -74,7 +79,7 @@ case $RET in
         continue
       fi
 
-      if [ $in_polished -eq 1 ] && [ -n "$line" ]; then
+      if [ $IN_POLISHED -eq 1 ] && [ -n "$line" ]; then
         CURRENT_TEXT="$line"
       fi
     done < "$HISTORY_FILE"
@@ -89,7 +94,7 @@ case $RET in
     # Reverse so newest is on top
     tac "$TMPFILE" > "${TMPFILE}.rev"
 
-    yad --text-info --title="xhisper History" \
+    yad --class=xhisper --text-info --title="xhisper History" \
       --filename="${TMPFILE}.rev" \
       --width=380 --height=400 \
       --geometry=380x400+$X_POS+$((Y_POS - 60)) \
