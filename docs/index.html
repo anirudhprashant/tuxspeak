@@ -8,185 +8,286 @@
   <meta property="og:title" content="TuxSpeak — Dictate Anywhere on Linux" />
   <meta property="og:description" content="Press Alt+Space, speak, get AI-polished text typed at your cursor. Groq Whisper + Gemini, GPL 3.0, free API tiers." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://github.com/anirudhprashant/tuxspeak" />
+  <meta property="og:url" content="https://tuxspeak.barestack.org" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #FAF9F5;
-      --bg-2: #F3F1EC;
-      --bg-3: #EDEAE1;
+      --canvas: #FAF9F5;
+      --surface: #F3F1EC;
       --line: #E4DECD;
-      --ink: #191C1B;
-      --muted: #68716D;
+      --content: #191C1B;
+      --muted: #5B6460;
       --subtle: #8B8578;
-      --code-bg: #F3F1EC;
-      --code-line: #E4DECD;
       --accent: #C37624;
       --accent-2: #A85E1C;
-      --warn: #fb565b;
+      --forest-dark: #141C11;
+      --cream: #F5F0E8;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      background: var(--bg);
-      color: var(--ink);
+      background: var(--canvas); color: var(--content);
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      font-size: 16px;
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+      font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden;
     }
-    a { color: var(--muted); text-decoration: none; transition: color 160ms ease; }
-    a:hover { color: var(--ink); }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    img { max-width: 100%; display: block; }
+    .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-    nav {
-      border-bottom: 1px solid var(--line);
-      background: rgba(250,249,245,0.92);
-      backdrop-filter: blur(20px) saturate(140%);
-      -webkit-backdrop-filter: blur(20px) saturate(140%);
-      position: sticky; top: 0; z-index: 50;
-    }
-    .nav-inner { display:flex; align-items:center; justify-content:space-between; height: 64px; }
-    .brand { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; letter-spacing: 0.01em; color: var(--ink); font-size: 18px; font-style: italic; }
-    .nav-links { display:flex; align-items:center; gap: 6px; }
-    .nav-links a { font-size: 13.5px; color: var(--muted); letter-spacing: 0.01em; padding: 6px 10px; border-radius: 8px; transition: color 160ms ease, background 160ms ease; }
-    .nav-links a:hover { color: var(--ink); background: var(--bg-2); }
-    .nav-cta { padding: 8px 14px; border: 1px solid var(--ink); border-radius: 999px; font-size: 13px; color: #fff; background: var(--ink); box-shadow: 0 1px 0 rgba(0,0,0,0.04); transition: transform 80ms ease, opacity 160ms ease, box-shadow 200ms ease; }
-    .nav-cta:hover { transform: translateY(-1px); opacity: 0.88; box-shadow: 0 4px 12px rgba(20,20,19,0.12); }
+    .kicker { display: inline-flex; align-items: center; gap: 9px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; }
+    .kicker .dot { width: 6px; height: 6px; border-radius: 1px; background: var(--accent); box-shadow: 0 0 10px rgba(195,118,36,0.55); flex-shrink: 0; }
+    .kicker.on-dark { color: rgba(232,184,109,0.85); }
+    .kicker.on-light { color: var(--accent-2); }
 
-    .hero { padding: 100px 0 72px; border-bottom: 1px solid var(--line); position: relative; background-image: radial-gradient(circle, var(--ink) 0.5px, transparent 0.5px); background-size: 24px 24px; opacity: 0.98; }
-    .hero::before { content: ""; position: absolute; top: -40px; right: -120px; width: 520px; height: 520px; background: radial-gradient(circle at center, rgba(195,118,36,0.14) 0%, rgba(195,118,36,0) 70%); pointer-events: none; }
-    .kicker { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent-2); display: inline-flex; align-items: center; gap: 8px; margin-bottom: 22px; }
-    .kicker::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px rgba(195,118,36,0.6); }
-    h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(40px, 6.4vw, 68px); line-height: 1.02; letter-spacing: -0.02em; max-width: 780px; }
-    h1 em { font-style: italic; color: var(--accent-2); }
-    .lede { max-width: 620px; font-size: 18px; color: var(--muted); margin-top: 22px; line-height: 1.6; }
-    .hero-ctas { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
-    .btn { padding: 12px 22px; border-radius: 999px; font-size: 13.5px; font-weight: 600; letter-spacing: 0.02em; }
-    .btn-primary { background: var(--ink); color: #fff; box-shadow: 0 1px 0 rgba(0,0,0,0.04); }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(20,20,19,0.16); }
-    .btn-ghost { border: 1px solid var(--line); color: var(--ink); background: var(--bg-2); }
-    .btn-ghost:hover { border-color: var(--accent-2); color: var(--accent-2); }
+    nav { position: sticky; top: 0; z-index: 50; height: 68px; background: rgba(250,249,245,0.9); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border-bottom: 1px solid var(--line); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+    .brand { font-size: 19px; font-style: italic; }
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-links a { font-size: 13.5px; color: var(--muted); padding: 8px 12px; border-radius: 2px; transition: color 160ms ease, background 160ms ease; }
+    .nav-links a:hover { color: var(--content); background: var(--surface); }
+    .nav-cta { padding: 9px 18px; border: 1px solid var(--content); border-radius: 0; font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #fff; background: var(--content); transition: transform 120ms ease, background 160ms ease; }
+    .nav-cta:hover { background: var(--accent-2); transform: translateY(-1px); }
+    @media (max-width: 760px) { .nav-links { display: none; } }
 
-    section { padding: 64px 0; border-bottom: 1px solid var(--line); }
-    .section-label { font-family: "JetBrains Mono", monospace; font-size: 11.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--subtle); margin-bottom: 14px; }
-    h2 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(28px, 3.6vw, 38px); letter-spacing: -0.02em; margin-bottom: 30px; max-width: 640px; }
+    .hero { position: relative; overflow: hidden; background: var(--forest-dark); color: var(--cream); padding: 88px 0 68px;
+      background-image: radial-gradient(rgba(255,255,255,0.05) 0.5px, transparent 0.5px); background-size: 26px 26px; }
+    .hero::before { content: ""; position: absolute; top: -140px; right: -160px; width: 640px; height: 640px; pointer-events: none;
+      background: radial-gradient(circle at center, rgba(195,118,36,0.22) 0%, rgba(195,118,36,0) 68%); }
+    .hero::after { content: ""; position: absolute; bottom: -220px; left: -120px; width: 480px; height: 480px; pointer-events: none;
+      background: radial-gradient(circle at center, rgba(45,61,38,0.5) 0%, rgba(45,61,38,0) 70%); }
+    .hero-inner { position: relative; z-index: 2; max-width: 760px; }
+    .hero h1 { font-size: clamp(42px, 6vw, 66px); line-height: 1.03; letter-spacing: -0.02em; margin-top: 20px; }
+    .hero h1 em { font-style: italic; color: var(--accent); padding-bottom: 0.08em; display: inline-block; line-height: 1.12; }
+    .hero p.lede { max-width: 540px; font-size: 17.5px; color: rgba(245,240,232,0.62); margin-top: 22px; line-height: 1.65; }
+    .hero-ctas { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; align-items: center; }
 
-    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-    .step { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 22px; }
-    .step-num { font-family: "Instrument Serif", Georgia, serif; font-size: 34px; color: var(--accent-2); line-height: 1; margin-bottom: 12px; }
-    .step h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-    .step p { font-size: 13.5px; color: var(--muted); }
+    .btn { padding: 13px 24px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 0; transition: transform 140ms ease, box-shadow 200ms ease, background 160ms ease, color 160ms ease; cursor: pointer; display: inline-block; }
+    .btn-solid { background: var(--cream); color: #191612; border: 1px solid var(--cream); }
+    .btn-solid:hover { background: var(--accent); border-color: var(--accent); color: #191612; transform: translateY(-1px); }
+    .btn-ghost-dark { border: 1px solid rgba(245,240,232,0.28); color: rgba(245,240,232,0.85); background: transparent; }
+    .btn-ghost-dark:hover { border-color: var(--accent); color: var(--accent); }
 
-    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .feature { border: 1px solid var(--line); border-radius: 12px; padding: 22px; background: var(--bg); }
-    .feature h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
-    .feature p { font-size: 13.5px; color: var(--muted); }
+    .demo-strip { display: inline-flex; align-items: center; gap: 12px; margin-top: 30px; padding: 10px 14px; background: rgba(0,0,0,0.28); border: 1px solid rgba(245,240,232,0.12); }
+    .demo-strip img { image-rendering: pixelated; height: 20px; width: auto; filter: invert(1); }
+    .demo-strip span { font-size: 11.5px; color: rgba(245,240,232,0.4); font-family: "JetBrains Mono", monospace; }
 
-    .code-block { background: var(--code-bg); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; font-family: "JetBrains Mono", monospace; font-size: 13.5px; color: var(--ink); overflow-x: auto; }
-    .code-block .comment { color: var(--subtle); }
+    .stats { padding: 52px 0; border-bottom: 1px solid var(--line); }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .stat { padding: 0 28px; border-left: 1px solid var(--line); }
+    .stat:first-child { border-left: none; padding-left: 0; }
+    .stat .num { font-family: "Instrument Serif", Georgia, serif; font-size: 40px; line-height: 1; color: var(--content); }
+    .stat .label { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--subtle); margin-top: 8px; }
+    @media (max-width: 760px) { .stats-row { grid-template-columns: 1fr 1fr; gap: 28px 0; } .stat { border-left: none; } .stat:nth-child(even) { padding-left: 20px; border-left: 1px solid var(--line); } }
 
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
-    th { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--subtle); font-weight: 500; }
+    section.block { padding: 84px 0; }
+    section.block.dark { background: var(--forest-dark); color: var(--cream); }
+    .section-head { max-width: 620px; margin-bottom: 42px; }
+    .section-head h2 { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(30px, 3.8vw, 42px); letter-spacing: -0.02em; line-height: 1.08; margin-top: 14px; }
+    .section-head p { color: var(--muted); margin-top: 14px; max-width: 52ch; font-size: 15.5px; }
+    section.block.dark .section-head p { color: rgba(245,240,232,0.6); }
 
-    .cta-final { text-align: center; padding: 90px 0; }
-    .cta-final h2 { margin: 0 auto 14px; }
-    .cta-final p { color: var(--muted); max-width: 480px; margin: 0 auto 30px; }
+    /* how it works: numbered rail, not equal-card row */
+    .steps-rail { display: grid; grid-template-columns: 60px 1fr; }
+    .step-row { display: contents; }
+    .step-row .n { font-family: "Instrument Serif", Georgia, serif; font-size: 30px; color: var(--accent-2); padding: 22px 0; border-top: 1px solid var(--line); }
+    .step-row .body { padding: 22px 0; border-top: 1px solid var(--line); display: flex; gap: 24px; align-items: baseline; flex-wrap: wrap; }
+    .step-row .body h3 { font-size: 16px; font-weight: 600; width: 180px; flex-shrink: 0; }
+    .step-row .body p { font-size: 14.5px; color: var(--muted); }
+    .step-row:last-child .n, .step-row:last-child .body { border-bottom: 1px solid var(--line); }
 
-    footer { padding: 36px 0; color: var(--subtle); font-size: 12.5px; background: var(--bg-2); }
-    .footer-inner { display:flex; justify-content:space-between; align-items:center; gap: 12px; flex-wrap: wrap; }
-    .footer-inner a { color: var(--muted); }
-    .footer-inner a:hover { color: var(--ink); }
+    .bento { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .bento.cols-2 { grid-template-columns: 1fr 1fr; }
+    .bento + .bento { margin-top: 16px; }
+    .bento-tile { border: 1px solid var(--line); padding: 28px; background: var(--surface); }
+    .bento-tile.span2 { grid-column: span 2; }
+    .bento-tile.dark-tile { background: var(--forest-dark); color: var(--cream); border-color: rgba(245,240,232,0.1); }
+    .bento-tile h3 { font-size: 15.5px; font-weight: 600; margin-bottom: 9px; }
+    .bento-tile p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+    .bento-tile.dark-tile p { color: rgba(245,240,232,0.6); }
+    @media (max-width: 860px) { .bento { grid-template-columns: 1fr; } .bento-tile.span2 { grid-column: span 1; } }
 
-    @media (max-width: 860px) {
-      .steps, .features { grid-template-columns: 1fr 1fr; }
-      .nav-links { display: none; }
-    }
-    @media (max-width: 560px) {
-      .steps, .features { grid-template-columns: 1fr; }
-      .footer-inner { flex-direction: column; align-items: flex-start; }
-    }
+    .polish-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .polish-panel { border: 1px solid rgba(245,240,232,0.14); padding: 24px; }
+    .polish-panel.raw { background: rgba(255,255,255,0.03); }
+    .polish-panel.done { background: rgba(195,118,36,0.08); border-color: rgba(195,118,36,0.3); }
+    .polish-panel .tag { font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.4); margin-bottom: 12px; }
+    .polish-panel.done .tag { color: var(--accent); }
+    .polish-panel p { font-size: 15px; line-height: 1.65; color: rgba(245,240,232,0.85); }
+    @media (max-width: 760px) { .polish-compare { grid-template-columns: 1fr; } }
+
+    .code-block { background: var(--surface); border: 1px solid var(--line); padding: 20px 22px; font-family: "JetBrains Mono", monospace; font-size: 13.5px; line-height: 1.9; color: var(--content); overflow-x: auto; white-space: pre; }
+    .code-block .cmt { color: var(--subtle); }
+
+    table.keys { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+    table.keys th, table.keys td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    table.keys th { font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--subtle); font-weight: 500; }
+    table.keys a { color: var(--accent-2); border-bottom: 1px solid rgba(168,94,28,0.3); }
+
+    .cta-final { padding: 96px 0; }
+    .cta-final .wrap { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .cta-final h2 { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-size: clamp(30px, 4.4vw, 46px); max-width: 560px; }
+
+    footer { padding: 30px 0; background: #1a1a1a; color: rgba(255,255,255,0.4); font-size: 12.5px; }
+    .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .footer-inner a { color: rgba(255,255,255,0.55); }
+    .footer-inner a:hover { color: #fff; }
+
+    .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+    .reveal.in { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
   </style>
 </head>
 <body>
   <nav>
     <div class="wrap nav-inner">
-      <a href="#" class="brand">tuxspeak</a>
+      <a href="#" class="brand serif">tuxspeak</a>
       <div class="nav-links">
         <a href="#how">How it works</a>
         <a href="#features">Features</a>
         <a href="#install">Install</a>
       </div>
-      <a href="https://github.com/anirudhprashant/tuxspeak" class="nav-cta">★ Star</a>
+      <a href="https://github.com/anirudhprashant/tuxspeak" class="nav-cta">Star on GitHub</a>
     </div>
   </nav>
 
   <header class="hero">
-    <div class="wrap">
-      <div class="kicker">Linux · GPL 3.0 · Free API tiers</div>
-      <h1>Dictate anywhere<br />on Linux, <em>at cursor speed.</em></h1>
-      <p class="lede">Press Alt+Space, speak, press it again. Groq Whisper transcribes, Gemini polishes the grammar and filler words, the result gets typed wherever your cursor is &mdash; browser, terminal, IDE, chat, anywhere.</p>
+    <div class="wrap hero-inner">
+      <span class="kicker on-dark"><span class="dot"></span>Linux · GPL 3.0 · Free API tiers</span>
+      <h1 class="serif">Dictate anywhere on Linux,<br /><em>at cursor speed.</em></h1>
+      <p class="lede">Press Alt+Space, speak, press it again. Groq Whisper transcribes, Gemini cleans up the grammar, the result gets typed wherever your cursor is, browser, terminal, IDE, anywhere.</p>
       <div class="hero-ctas">
-        <a href="https://github.com/anirudhprashant/tuxspeak" class="btn btn-primary">★ Star on GitHub</a>
-        <a href="https://github.com/anirudhprashant/tuxspeak#quick-start" class="btn btn-ghost">Quick start →</a>
+        <a href="https://github.com/anirudhprashant/tuxspeak" class="btn btn-solid">Star on GitHub</a>
+        <a href="#install" class="btn btn-ghost-dark">Quick start</a>
+      </div>
+      <div class="demo-strip">
+        <img src="demo.gif" alt="Terminal showing the transcribing status typed live at the cursor" />
+        <span>typed live at the cursor, via the underlying xhisper core</span>
       </div>
     </div>
   </header>
 
-  <section id="how">
+  <section class="stats">
     <div class="wrap">
-      <div class="section-label">How it works</div>
-      <h2>Four steps, no cloud dashboard, no daemon lock-in.</h2>
-      <div class="steps">
-        <div class="step"><div class="step-num">01</div><h3>Alt+Space</h3><p>Starts recording. Indicator shows <code>(recording...)</code>.</p></div>
-        <div class="step"><div class="step-num">02</div><h3>Speak</h3><p>Groq Whisper transcribes in real time.</p></div>
-        <div class="step"><div class="step-num">03</div><h3>Alt+Space again</h3><p>Gemini 3.1 Flash Lite polishes grammar and cuts filler words.</p></div>
-        <div class="step"><div class="step-num">04</div><h3>Typed at cursor</h3><p>Result lands via uinput. Silence cancels; nothing pastes.</p></div>
+      <div class="stats-row reveal">
+        <div class="stat"><div class="num">2</div><div class="label">Key presses per dictation</div></div>
+        <div class="stat"><div class="num">0</div><div class="label">Cloud dashboard</div></div>
+        <div class="stat"><div class="num">GPL 3.0</div><div class="label">Wrapper license</div></div>
+        <div class="stat"><div class="num">MIT</div><div class="label">xhisper core</div></div>
       </div>
     </div>
   </section>
 
-  <section id="features">
+  <section class="block" id="how">
     <div class="wrap">
-      <div class="section-label">Features</div>
-      <h2>Local-first, cross-app, open source.</h2>
-      <div class="features">
-        <div class="feature"><h3>Cross-app dictation</h3><p>Works in browser, terminal, IDE, chat, email &mdash; any text field, any window.</p></div>
-        <div class="feature"><h3>AI polishing</h3><p>Gemini 3.1 Flash Lite cleans up filler words and grammar before typing.</p></div>
-        <div class="feature"><h3>Dictation history</h3><p>Every dictation saved with timestamp, raw and polished versions, re-copyable.</p></div>
-        <div class="feature"><h3>Local-first</h3><p>Audio stays on your machine. Only the audio blob leaves, for transcription and polishing.</p></div>
-        <div class="feature"><h3>Open source</h3><p>GPL 3.0 for the wrapper, MIT for the <a href="https://github.com/imaginalnika/xhisper">xhisper</a> core it's built on.</p></div>
-        <div class="feature"><h3>Free APIs</h3><p>Groq Whisper and Gemini both ship generous free tiers. No credit card needed.</p></div>
+      <div class="section-head reveal">
+        <h2>Four steps, no daemon lock-in.</h2>
+        <p>Everything runs locally except the two API calls: one to transcribe, one to polish.</p>
+      </div>
+      <div class="steps-rail reveal">
+        <div class="step-row">
+          <div class="n">01</div>
+          <div class="body"><h3>Alt+Space</h3><p>Starts recording. The status <span class="mono" style="font-size:13px;">(recording...)</span> types itself at your cursor.</p></div>
+        </div>
+        <div class="step-row">
+          <div class="n">02</div>
+          <div class="body"><h3>Speak</h3><p>Groq Whisper transcribes in real time once you stop.</p></div>
+        </div>
+        <div class="step-row">
+          <div class="n">03</div>
+          <div class="body"><h3>Alt+Space again</h3><p>Gemini 3.1 Flash Lite fixes grammar and filler words without rephrasing your sentence.</p></div>
+        </div>
+        <div class="step-row">
+          <div class="n">04</div>
+          <div class="body"><h3>Typed at cursor</h3><p>Result lands via a virtual uinput keyboard. Silence cancels automatically, nothing gets pasted.</p></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section id="install">
+  <section class="block dark">
     <div class="wrap">
-      <div class="section-label">Install</div>
-      <h2>One script. Handles deps, keys, build, and the shortcut.</h2>
-      <div class="code-block"><span class="comment"># clone and run the installer</span><br />git clone https://github.com/anirudhprashant/tuxspeak.git<br />cd tuxspeak<br />./install-xhisper.sh</div>
-      <div style="height:20px"></div>
-      <table>
-        <thead><tr><th>Service</th><th>What it does</th><th>Free key</th></tr></thead>
-        <tbody>
-          <tr><td>Groq</td><td>Speech-to-text (Whisper)</td><td><a href="https://console.groq.com/keys">console.groq.com/keys</a></td></tr>
-          <tr><td>Gemini</td><td>Text polishing (Gemini 3.1 Flash Lite)</td><td><a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></td></tr>
-        </tbody>
-      </table>
+      <div class="section-head reveal">
+        <span class="kicker on-dark" style="margin-bottom:14px; display:inline-flex;"><span class="dot"></span>What Gemini actually fixes</span>
+        <h2 class="serif">Wording stays yours. Only the noise gets cut.</h2>
+        <p>The polish prompt is deliberately narrow: fix obvious errors, do not restructure sentences, do not add tone.</p>
+      </div>
+      <div class="polish-compare reveal">
+        <div class="polish-panel raw">
+          <div class="tag">Raw transcription</div>
+          <p>um so basically the the deploy script needs to check for uh the env file before it runs right so we dont crash on missing keys</p>
+        </div>
+        <div class="polish-panel done">
+          <div class="tag">Typed at cursor</div>
+          <p>So the deploy script needs to check for the env file before it runs, so we don't crash on missing keys.</p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="cta-final" style="border-bottom:none;">
+  <section class="block" id="features">
     <div class="wrap">
-      <h2>Press Alt+Space. Speak. Done.</h2>
-      <p>Requires Linux + PipeWire. Reboot after install if you were added to the input group.</p>
-      <a href="https://github.com/anirudhprashant/tuxspeak" class="btn btn-primary">★ Star on GitHub</a>
+      <div class="section-head reveal">
+        <h2>Local-first, cross-app, open source.</h2>
+        <p>No accounts, no telemetry. Two free-tier API keys and it runs entirely on your own machine.</p>
+      </div>
+      <div class="bento cols-2">
+        <div class="bento-tile reveal">
+          <h3>Cross-app dictation</h3>
+          <p>Works in browser, terminal, IDE, chat, email, any text field, any window. No browser extension, no accessibility API integration required.</p>
+        </div>
+        <div class="bento-tile dark-tile reveal">
+          <h3>Local-first</h3>
+          <p>Audio stays on your machine. Only the audio blob leaves, for transcription and polishing, nothing else.</p>
+        </div>
+      </div>
+      <div class="bento">
+        <div class="bento-tile reveal">
+          <h3>Dictation history</h3>
+          <p>Every dictation saved with a timestamp, raw and polished versions, re-copyable from a GUI popup or the terminal.</p>
+        </div>
+        <div class="bento-tile reveal">
+          <h3>Open source</h3>
+          <p>GPL 3.0 for the wrapper, MIT for the <a href="https://github.com/imaginalnika/xhisper" style="color:var(--accent-2); border-bottom:1px solid rgba(168,94,28,0.3);">xhisper</a> core it's built on.</p>
+        </div>
+        <div class="bento-tile reveal">
+          <h3>Free APIs, generous tiers</h3>
+          <p>Groq Whisper and Gemini both ship free tiers wide enough for daily dictation. No credit card required to start.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="install">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="kicker on-light" style="margin-bottom:14px; display:inline-flex;"><span class="dot"></span>Install</span>
+        <h2>One script. Deps, keys, build, shortcut.</h2>
+      </div>
+      <div class="code-block reveal"><span class="cmt"># clone and run the installer</span>
+git clone https://github.com/anirudhprashant/tuxspeak.git
+cd tuxspeak
+./install-xhisper.sh</div>
+      <div class="reveal" style="margin-top:32px;">
+        <table class="keys">
+          <thead><tr><th>Service</th><th>What it does</th><th>Free key</th></tr></thead>
+          <tbody>
+            <tr><td>Groq</td><td>Speech-to-text (Whisper)</td><td><a href="https://console.groq.com/keys">console.groq.com/keys</a></td></tr>
+            <tr><td>Gemini</td><td>Text polishing (Gemini 3.1 Flash Lite)</td><td><a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-final block dark">
+    <div class="wrap">
+      <h2 class="serif">Press Alt+Space.<br />Speak. <em style="color:var(--accent);">Done.</em></h2>
+      <a href="https://github.com/anirudhprashant/tuxspeak" class="btn btn-solid">Star on GitHub</a>
     </div>
   </section>
 
@@ -200,5 +301,16 @@
       </span>
     </div>
   </footer>
+
+  <script>
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+    } else {
+      document.querySelectorAll('.reveal').forEach((el) => el.classList.add('in'));
+    }
+  </script>
 </body>
 </html>
