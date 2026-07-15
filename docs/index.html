@@ -76,27 +76,21 @@
     .term-bar > span { width: 10px; height: 10px; border-radius: 50%; background: rgba(245,240,232,0.18); }
     .term-bar .term-title { width: auto; height: auto; border-radius: 0; background: none; margin-left: 8px; font-size: 11px; color: rgba(245,240,232,0.35); letter-spacing: 0.06em; }
     .term-body { padding: 22px 24px; }
-    .flow-line { margin-bottom: 16px; }
-    .flow-line .key { display: inline-block; padding: 5px 10px; border: 1px solid rgba(245,240,232,0.22); font-size: 11.5px; color: rgba(245,240,232,0.75); letter-spacing: 0.04em; }
-    .term-body .status { font-size: 13px; line-height: 1.9; color: rgba(245,240,232,0.4); }
-    .term-body .status:last-of-type { color: rgba(232,184,109,0.75); }
-    .flow-rule { height: 1px; background: rgba(245,240,232,0.1); margin: 16px 0; }
-    .term-body .result { font-size: 14.5px; line-height: 1.6; color: var(--cream); }
-    @media (max-width: 520px) { .term-body { padding: 18px; } .term-body .result { font-size: 13.5px; } }
+    .term-body .hint { font-size: 11px; color: rgba(245,240,232,0.32); letter-spacing: 0.02em; padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid rgba(245,240,232,0.1); }
+    .term-body .hint .key { color: rgba(232,184,109,0.75); }
+    /* signature: replays the real paste/delete sequence xhisper-gemini runs at your cursor */
+    .term-body .stage { font-size: 14.5px; line-height: 1.65; color: var(--cream); min-height: 4.95em; }
+    .term-body .stage.is-status { font-family: "JetBrains Mono", monospace; font-size: 13px; color: rgba(245,240,232,0.42); }
+    .caret { display: inline-block; width: 7px; height: 1.05em; background: var(--accent); vertical-align: text-bottom; margin-left: 1px; animation: blink 1.1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+    @media (max-width: 520px) { .term-body { padding: 18px; } .term-body .stage { font-size: 13.5px; min-height: 5.6em; } }
 
     .btn { padding: 13px 24px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 0; transition: transform 140ms ease, box-shadow 200ms ease, background 160ms ease, color 160ms ease; cursor: pointer; display: inline-block; }
     .btn-solid { background: var(--cream); color: #191612; border: 1px solid var(--cream); }
     .btn-solid:hover { background: var(--accent); border-color: var(--accent); color: #191612; transform: translateY(-1px); }
     .btn-ghost-dark { border: 1px solid rgba(245,240,232,0.28); color: rgba(245,240,232,0.85); background: transparent; }
     .btn-ghost-dark:hover { border-color: var(--accent); color: var(--accent); }
-
-    .stats { padding: 52px 0; border-bottom: 1px solid var(--line); }
-    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); }
-    .stat { padding: 0 28px; border-left: 1px solid var(--line); }
-    .stat:first-child { border-left: none; padding-left: 0; }
-    .stat .num { font-family: "Instrument Serif", Georgia, serif; font-size: 40px; line-height: 1; color: var(--content); }
-    .stat .label { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--subtle); margin-top: 8px; }
-    @media (max-width: 760px) { .stats-row { grid-template-columns: 1fr 1fr; gap: 28px 0; } .stat { border-left: none; } .stat:nth-child(even) { padding-left: 20px; border-left: 1px solid var(--line); } }
 
     section.block { padding: 84px 0; }
     section.block.dark { background: var(--forest-dark); color: var(--cream); }
@@ -187,34 +181,19 @@
             <span class="term-title mono">any text field, anywhere</span>
           </div>
           <div class="term-body">
-            <div class="flow-line"><span class="key mono">Alt+Space</span></div>
-            <p class="status mono">(recording...)</p>
-            <p class="status mono">(transcribing...)</p>
-            <p class="status mono">(polishing...)</p>
-            <div class="flow-rule"></div>
-            <p class="result">Let's push the auth fix to staging first, then run the migration once the tests go green.</p>
+            <div class="hint mono"><span class="key">Alt+Space</span> starts. Speak. <span class="key">Alt+Space</span> again.</div>
+            <p class="stage" id="stage" aria-live="polite"><span id="typed"></span><span class="caret" aria-hidden="true"></span></p>
           </div>
         </div>
       </div>
     </div>
   </header>
 
-  <section class="stats">
-    <div class="wrap">
-      <div class="stats-row reveal">
-        <div class="stat"><div class="num">2</div><div class="label">Key presses per dictation</div></div>
-        <div class="stat"><div class="num">0</div><div class="label">Cloud dashboard</div></div>
-        <div class="stat"><div class="num">GPL 3.0</div><div class="label">Wrapper license</div></div>
-        <div class="stat"><div class="num">MIT</div><div class="label">xhisper core</div></div>
-      </div>
-    </div>
-  </section>
-
   <section class="block" id="how">
     <div class="wrap">
       <div class="section-head reveal">
-        <h2>Four steps, no daemon lock-in.</h2>
-        <p>Everything runs locally except the two API calls: one to transcribe, one to polish.</p>
+        <h2>Two key presses, two API calls.</h2>
+        <p>Nothing else leaves the machine. A small background daemon, <span class="mono" style="font-size:13.5px;">xhispertoold</span>, holds the virtual keyboard so the text can land in any window.</p>
       </div>
       <div class="steps-rail reveal">
         <div class="step-row">
@@ -331,6 +310,68 @@ cd tuxspeak
   </footer>
 
   <script>
+    // Hero: replay the sequence xhisper-gemini actually runs at your cursor.
+    // It pastes a status, deletes it, pastes the next, then pastes the polished text.
+    (function () {
+      const typed = document.getElementById('typed');
+      const stage = document.getElementById('stage');
+      if (!typed || !stage) return;
+
+      const FINAL = "Let's push the auth fix to staging first, then run the migration once the tests go green.";
+      const steps = [
+        { text: '(recording...)',    status: true,  hold: 850 },
+        { text: '(transcribing...)', status: true,  hold: 650 },
+        { text: '(polishing...)',    status: true,  hold: 650 },
+        { text: FINAL,               status: false, hold: 4200 }
+      ];
+
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) { typed.textContent = FINAL; return; }
+
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      let running = true, started = false;
+
+      async function type(str, perChar) {
+        for (let i = 1; i <= str.length; i++) {
+          if (!running) return false;
+          typed.textContent = str.slice(0, i);
+          await sleep(perChar);
+        }
+        return true;
+      }
+      async function erase(len, perChar) {
+        for (let i = len; i >= 0; i--) {
+          if (!running) return false;
+          typed.textContent = typed.textContent.slice(0, i);
+          await sleep(perChar);
+        }
+        return true;
+      }
+
+      async function loop() {
+        while (running) {
+          for (const step of steps) {
+            if (!running) return;
+            stage.classList.toggle('is-status', step.status);
+            if (!(await type(step.text, step.status ? 26 : 30))) return;
+            await sleep(step.hold);
+            if (!running) return;
+            // the script deletes the status before pasting the next thing
+            if (!(await erase(step.text.length, step.status ? 12 : 8))) return;
+          }
+        }
+      }
+
+      // Only animate while the hero is actually on screen.
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting && !started) { started = true; running = true; loop(); }
+          else if (!e.isIntersecting) { running = false; started = false; }
+        });
+      }, { threshold: 0.25 });
+      io.observe(stage);
+    })();
+
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const io = new IntersectionObserver((entries) => {
         entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
