@@ -1,250 +1,141 @@
-# TuxSpeak
+<p align="center">
+  <img src=".github/assets/banner.png" alt="TuxSpeak: talk, it types, anywhere on Linux" width="100%">
+</p>
 
-![License](https://img.shields.io/badge/License-GPL_3.0-blue)
-![Platform](https://img.shields.io/badge/Platform-Linux-green)
-![Status](https://img.shields.io/badge/Status-Active-success)
+<p align="center">
+  <img alt="Linux" src="https://img.shields.io/badge/linux-X11%20%2B%20Wayland-10B981?style=flat-square&labelColor=12100D&logo=linux&logoColor=white">
+  <img alt="Free APIs" src="https://img.shields.io/badge/API%20cost-%240%20free%20tiers-10B981?style=flat-square&labelColor=12100D">
+  <a href="LICENSE"><img alt="GPL 3.0" src="https://img.shields.io/badge/license-GPL%203.0-2E2922?style=flat-square&labelColor=12100D"></a>
+  <a href="https://tuxspeak.barestack.org"><img alt="Website" src="https://img.shields.io/badge/site-tuxspeak.barestack.org-2E2922?style=flat-square&labelColor=12100D"></a>
+</p>
 
-**Dictate anywhere on Linux. Press Alt+Space, speak, get AI-polished text typed at your cursor.**
+<p align="center">
+  <b>Press <kbd>Alt</kbd> + <kbd>Space</kbd>, say what you mean, press it again.</b><br>
+  Clean, punctuated text appears wherever your cursor is: browser, terminal, IDE, Slack, email.<br>
+  No extension, no app-specific plugin. It types like a keyboard.
+</p>
 
-[![Live Site](https://img.shields.io/badge/View-Landing_Page-10b981)](https://tuxspeak.barestack.org)
-[![GitHub](https://img.shields.io/badge/GitHub-anirudhprashant%2Ftuxspeak-181717?logo=github)](https://github.com/anirudhprashant/tuxspeak)
-
-Record speech → Groq Whisper transcribes → Gemini polishes the text → typed wherever your cursor is. Works in any app: browser, terminal, IDE, chat, email, anywhere you can type.
-
-Built on [xhisper](https://github.com/imaginalnika/xhisper) (MIT), extended with AI polishing, history, and a GUI browser.
-
-![TuxSpeak landing page](tuxspeak-site.png)
-
----
-
-## Quick Start
-
-```bash
-git clone https://github.com/anirudhprashant/tuxspeak.git
-cd tuxspeak
-./install-xhisper.sh
-```
-
-The installer handles dependencies, API key setup, build, and shortcut configuration.
-
----
-
-## How It Works
-
-| Step | Action | Result |
-|------|--------|--------|
-| **1** | Press `Alt+Space` | Starts recording |
-| **2** | Speak | Groq Whisper transcribes in real time |
-| **3** | Press `Alt+Space` again | Gemini polishes the text |
-| **4** | Text appears | Typed at your cursor via uinput |
-
-- **First press**: starts recording (indicator shows `(recording...)`)
-- **Second press**: stops, transcribes, polishes, types the result
-- **Silence detection**: if no sound detected, cancels without pasting
-- **History**: every dictation saved with timestamp, raw + polished versions
-
----
-
-## Features
-
-- **Cross-app dictation** — works in browser, terminal, IDE, chat, email, and any text field
-- **AI polishing** — Gemini 3.1 Flash Lite cleans up filler words and grammar
-- **Dictation history** — review and re-copy past transcriptions
-- **Local-first** — audio stays on your machine; only audio blobs are sent to APIs
-- **Open source** — GPL 3.0 for the wrapper, MIT for the xhisper core
-- **Free APIs** — Groq Whisper and Gemini both have generous free tiers
-
----
-
-## Requirements
-
-- Linux with PipeWire (for audio recording)
-- A keyboard (for the Alt+Space shortcut)
-
-### Free API Keys
-
-| Service | What It Does | Get Key |
-|---------|-------------|---------|
-| **Groq** | Speech-to-text (Whisper) | [console.groq.com/keys](https://console.groq.com/keys) |
-| **Gemini** | Text polishing (Gemini 3.1 Flash Lite) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-
-Both have generous free tiers. No credit card needed.
-
----
+<br>
 
 ## Install
 
-### Option 1: AI agent install
-
-Copy this block into Claude Code, ChatGPT, or any AI coding agent:
-
-```
-I want to install TuxSpeak on my Linux machine. Here's what to do:
-
-1. Clone https://github.com/anirudhprashant/tuxspeak.git
-2. Read the README.md first to understand the project
-3. Run ./install-xhisper.sh — it will prompt me for my Groq and Gemini API keys
-   - Groq free key: https://console.groq.com/keys
-   - Gemini free key: https://aistudio.google.com/apikey
-4. After install, set up the Alt+Space keyboard shortcut:
-   - GNOME: free the Alt+Space binding first with:
-     gsettings set org.gnome.desktop.wm.keybindings activate-window-menu "[]"
-   - Then create a custom shortcut: Name=TuxSpeak, Command=xhisper-gemini, Shortcut=Alt+Space
-   - For other desktop environments/WMs (KDE, i3, Sway, Hyprland), bind Alt+Space to xhisper-gemini using that environment's shortcut config
-5. Start the daemon: nohup xhispertoold &>/dev/null &
-6. Tell me to reboot if I was added to the input group
-7. Verify it works — tell me to press Alt+Space and speak
-```
-
-### Option 2: Manual install
-
 ```bash
 git clone https://github.com/anirudhprashant/tuxspeak.git
-cd tuxspeak
-./install-xhisper.sh
+cd tuxspeak && ./install-xhisper.sh
 ```
 
-The installer:
-1. Installs system dependencies (`curl`, `jq`, `ffmpeg`, `gcc`, `make`, `yad`, `xdotool`, `xclip`, `wl-clipboard`, `pipewire`)
-2. Prompts for your Groq and Gemini API keys (saved to `~/.env`)
-3. Builds and installs the xhisper C tools (`xhispertool`, `xhispertoold`)
-4. Copies scripts to `~/.local/bin/`
-5. Sets up udev rules for uinput (virtual keyboard)
-6. Adds you to the `input` group
+The installer handles dependencies, asks for two free API keys, builds the typing daemon
+and sets up permissions. **Reboot once** if it adds you to the `input` group, then bind
+the shortcut ([below](#bind-altspace)).
 
-**Reboot after install** if you were added to the `input` group.
+You need Linux with PipeWire and two free keys, no card required:
 
----
+| Key | Does | Get it |
+|---|---|---|
+| **Groq** | Speech to text (Whisper) | [console.groq.com/keys](https://console.groq.com/keys) |
+| **Gemini** | Cleans up the text (Gemini 3.1 Flash Lite) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 
-## Set Up Keyboard Shortcut
+<details>
+<summary><b>Let an AI agent install it for you</b></summary>
 
-After install, bind the shortcut:
+Paste this into Claude Code, Codex or any coding agent:
 
-**GNOME:**
 ```
-Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts → +
-  Name: TuxSpeak
-  Command: /home/YOUR_USER/.local/bin/xhisper-gemini
-  Shortcut: Alt+Space
+Install TuxSpeak on my Linux machine:
+1. Clone https://github.com/anirudhprashant/tuxspeak.git and read its README.
+2. Run ./install-xhisper.sh. It asks for my Groq and Gemini keys
+   (free: console.groq.com/keys and aistudio.google.com/apikey).
+3. Bind Alt+Space to xhisper-gemini for my desktop. On GNOME, free the key first:
+   gsettings set org.gnome.desktop.wm.keybindings activate-window-menu "[]"
+4. Start the daemon: nohup xhispertoold &>/dev/null &
+5. Tell me to reboot if I was added to the input group, then to test Alt+Space.
+```
+</details>
+
+## How it works
+
+```mermaid
+flowchart LR
+  A(["Alt+Space"]) --> B["Record<br/>PipeWire"]
+  B --> C["Transcribe<br/>Groq Whisper"]
+  C --> D["Polish<br/>Gemini"]
+  D --> E["Type at cursor<br/>virtual keyboard"]
 ```
 
-First free Alt+Space if GNOME uses it for window menu:
+- **Silence cancels.** If nothing was said, nothing is typed.
+- **Polish can't lose your words.** If Gemini fails, you get the raw transcript instead.
+- **Every dictation is saved**, raw and polished, with a timestamp.
+- **Long recordings** switch automatically to the larger Whisper model.
+
+`xhispertool` creates a virtual keyboard through `/dev/uinput`, so ASCII is typed as real
+kernel key events. Unicode and emoji go through the clipboard and a simulated
+<kbd>Ctrl</kbd>+<kbd>V</kbd>. That's why it works in any app, with no accessibility APIs
+and no compositor integration.
+
+## Bind Alt+Space
+
+**GNOME**: free the key, then add a custom shortcut:
+
 ```bash
 gsettings set org.gnome.desktop.wm.keybindings activate-window-menu "[]"
+# Settings → Keyboard → Custom Shortcuts → +
+#   Name: TuxSpeak   Command: ~/.local/bin/xhisper-gemini   Shortcut: Alt+Space
 ```
 
-**KDE:**
-```
-System Settings → Shortcuts → Custom Shortcuts → Edit → New → Global Shortcut → Command/URL
-  Trigger: Alt+Space
-  Action: /home/YOUR_USER/.local/bin/xhisper-gemini
-```
+**KDE**: System Settings → Shortcuts → Custom Shortcuts → New → Global Shortcut → Command, then `~/.local/bin/xhisper-gemini` on <kbd>Alt</kbd>+<kbd>Space</kbd>.
 
-**Other WMs** (i3, Sway, Hyprland, etc.): bind `xhisper-gemini` to Alt+Space in your config.
+**Hyprland · Sway · i3**: bind `xhisper-gemini` to Alt+Space in your config, e.g. `bind = ALT, SPACE, exec, xhisper-gemini`.
 
----
+## Commands
 
-## Usage
+| Command | Does |
+|---|---|
+| `xhisper-gemini` | Record, transcribe, polish, type (what Alt+Space runs) |
+| `xhisper-gui` | Popup with the last dictation, Copy and History buttons |
+| `xhisper-last` | Print the last polished dictation |
+| `xhisper-history` | Print the full history |
 
-### Dictate (Alt+Space)
+History lives in `~/.local/share/xhisper/history.txt`. Keys live in `~/.env`.
 
-Press **Alt+Space** to start recording. Speak. Press **Alt+Space** again to stop and get polished text.
+> [!NOTE]
+> `xhisper-gui` places itself for a 1920×1080 screen. On other resolutions, edit `X_POS` and `Y_POS` in `~/.local/bin/xhisper-gui`.
 
-The polished text is typed at your cursor. Raw and polished versions saved to history.
-
-### GUI Popup (`xhisper-gui`)
-
-Shows last dictation with two buttons:
-- **Copy** — copies last dictation to clipboard
-- **History** — opens scrollable history viewer
-
-> **Note:** GUI coordinates are hardcoded for 1920×1080 (bottom-right, above dock). If your screen resolution differs, edit `~/.local/bin/xhisper-gui` and change `X_POS` and `Y_POS`.
-
-### Terminal Commands
-
-| Command | What It Does |
-|---------|-------------|
-| `xhisper-gemini` | Record → transcribe → polish → type (same as Alt+Space) |
-| `xhisper-gui` | GUI popup with last dictation + history |
-| `xhisper-last` | Print last polished dictation to terminal |
-| `xhisper-history` | Print full history to terminal |
-
----
-
-## Files
-
-| Path | What |
-|------|------|
-| `~/.local/bin/xhisper-gemini` | Main dictation script |
-| `~/.local/bin/xhisper-gui` | GUI popup |
-| `~/.local/bin/xhisper-last` | Last dictation viewer |
-| `~/.local/bin/xhisper-history` | History viewer |
-| `~/.local/share/xhisper/history.txt` | Dictation history (timestamped, raw + polished) |
-| `~/.config/xhisper/xhisperrc` | Optional config (thresholds, timing) |
-| `~/.env` | API keys (Groq + Gemini) |
-
----
-
-## Configuration
-
-Copy the default config and tweak:
+## Configure
 
 ```bash
 cp /usr/local/share/xhisper/default_xhisperrc ~/.config/xhisper/xhisperrc
 ```
 
-| Setting | Default | What |
-|---------|---------|------|
-| `long-recording-threshold` | 1000 | Seconds before switching to large Whisper model |
-| `silence-threshold` | -50 | dB threshold for silence detection |
-| `silence-percentage` | 95 | % of audio below threshold to trigger silence cancel |
-| `non-ascii-initial-delay` | 0.15 | Delay before first non-ASCII char paste (seconds) |
-| `non-ascii-default-delay` | 0.025 | Delay between non-ASCII char pastes |
-
----
+| Setting | Default | Meaning |
+|---|---|---|
+| `long-recording-threshold` | `1000` | Seconds before switching to the larger Whisper model |
+| `silence-threshold` | `-50` | dB level counted as silence |
+| `silence-percentage` | `95` | % of silent audio that cancels the dictation |
+| `non-ascii-initial-delay` | `0.15` | Seconds before the first Unicode paste |
+| `non-ascii-default-delay` | `0.025` | Seconds between Unicode pastes |
 
 ## Troubleshooting
 
-**"xhispertool not found"** — run `sudo make install` from `xhisper-src/` directory.
+| Symptom | Fix |
+|---|---|
+| `xhispertool not found` | `cd xhisper-src && sudo make install` |
+| Nothing happens | Start the daemon: `xhispertoold &` |
+| `uinput permission denied` | Reboot, or `sudo usermod -aG input $USER` and log in again |
+| Recording but no text | Check the Groq key in `~/.env`, then read `/tmp/xhisper-gemini.log` |
+| Text not polished | Check the Gemini key. Raw text is typed as a fallback |
+| Unicode doesn't paste | Install `wl-clipboard` (Wayland) or `xclip` (X11) |
 
-**Daemon not running** — `xhispertoold` must be running. The script auto-starts it, or run it manually: `xhispertoold &`
+## Privacy
 
-**uinput permission denied** — reboot after install, or: `sudo usermod -aG input $USER` then log out and back in.
+Audio is recorded locally and sent only to Groq for transcription. Only the resulting text
+goes to Gemini. Nothing else leaves your machine, and there is no TuxSpeak server.
 
-**No clipboard tool** — install `xclip` (X11) or `wl-clipboard` (Wayland).
+## Credits and licence
 
-**Recording but no text** — check your Groq API key in `~/.env`. Run `xhisper-gemini` from terminal to see debug output in `/tmp/xhisper-gemini.log`.
-
-**Gemini polishing fails** — check your Gemini API key. The script falls back to raw transcription if polishing fails.
-
----
-
-## How It Types
-
-`xhispertool` creates a virtual uinput keyboard device at `/dev/uinput`. ASCII characters are typed as kernel-level key events. Non-ASCII characters (Unicode, emoji) go through the clipboard — copied then pasted via simulated Ctrl+V.
-
-This means it works in **any application** — no browser extension, no accessibility API, no compositor integration needed.
-
----
-
-## License
-
-**GNU General Public License v3.0** — free for everyone, forever. Any modifications or forks must also be open source under GPL.
-
-The xhisper C core (`xhisper-src/`) is copyright xhisper contributors under MIT. The combined work (TuxSpeak wrapper, scripts, installer) is GPL 3.0.
-
-See [LICENSE](LICENSE).
+Built on [**xhisper**](https://github.com/imaginalnika/xhisper) by Nika, the C daemon and
+original dictation tool (MIT). TuxSpeak adds the AI polishing pipeline, history, GUI and
+installer, licensed **GPL 3.0**. The `xhisper-src/` core stays MIT. See [LICENSE](LICENSE).
 
 ---
 
-## Credits
-
-- [xhisper](https://github.com/imaginalnika/xhisper) by Nika — the C daemon and original dictation tool (MIT)
-- TuxSpeak scripts and AI pipeline by [Anirudh](https://github.com/anirudhprashant)
-
----
-
-## Links
-
-- 🌐 **Live site**: https://tuxspeak.barestack.org
-- 🐙 **GitHub**: https://github.com/anirudhprashant/tuxspeak
+<p align="center"><sub>made by <a href="https://github.com/anirudhprashant">Anirudh Prashant</a> · <a href="https://tuxspeak.barestack.org">tuxspeak.barestack.org</a></sub></p>

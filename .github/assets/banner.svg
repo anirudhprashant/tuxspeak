@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" width="1280" height="420" role="img" aria-label="TuxSpeak: dictate anywhere on Linux">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12100D"/><stop offset="1" stop-color="#1C1915"/></linearGradient>
+  <linearGradient id="w" x1="0" x2="1"><stop offset="0" stop-color="#10B981" stop-opacity=".15"/><stop offset=".6" stop-color="#10B981"/><stop offset="1" stop-color="#34D399"/></linearGradient></defs>
+  <rect width="1280" height="420" rx="24" fill="url(#g)"/>
+  <text x="80" y="160" font-family="'Instrument Serif', Georgia, serif" font-size="100" fill="#FAF9F5" letter-spacing="-1">Tux<tspan font-style="italic" fill="#34D399">Speak</tspan></text>
+  <text x="84" y="212" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="27" fill="#BDB6AA">Talk. It types. Anywhere on Linux.</text>
+  <!-- keycap -->
+  <g transform="translate(84 262)" font-family="'JetBrains Mono', Menlo, monospace" font-size="17">
+    <rect width="66" height="44" rx="9" fill="#26221D" stroke="#3A342C"/><text x="33" y="28" text-anchor="middle" fill="#E8E2D6">Alt</text>
+    <text x="84" y="28" fill="#6F675B">+</text>
+    <rect x="104" width="150" height="44" rx="9" fill="#26221D" stroke="#10B981"/><text x="179" y="28" text-anchor="middle" fill="#E8E2D6">Space</text>
+    <text x="276" y="28" fill="#8A8173">speak · press again · done</text>
+  </g>
+  <text x="84" y="360" font-family="'JetBrains Mono', Menlo, monospace" font-size="15" fill="#6F675B">Groq Whisper → Gemini polish → typed at your cursor · X11 + Wayland · GPL-3.0</text>
+  <!-- waveform becoming text -->
+  <g transform="translate(760 120)">
+    <rect width="440" height="190" rx="14" fill="#1F1C18" stroke="#2E2922"/>
+    <circle cx="22" cy="22" r="5" fill="#EF4444"/><text x="36" y="27" font-family="'JetBrains Mono', monospace" font-size="12" fill="#8A8173">recording…</text>
+    <g stroke="url(#w)" stroke-width="5" stroke-linecap="round">
+      <path d="M30 80v14M46 72v30M62 64v46M78 76v22M94 58v58M110 68v38M126 78v18M142 62v50M158 72v30M174 80v14M190 66v42M206 74v26M222 60v54M238 70v34M254 78v18M270 66v42M286 72v30M302 80v14"/>
+    </g>
+    <path d="M322 87 h26" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"/><path d="M342 81 l8 6 -8 6" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="20" y1="132" x2="420" y2="132" stroke="#2E2922"/>
+    <text x="22" y="164" font-family="'JetBrains Mono', Menlo, monospace" font-size="16" fill="#E8E2D6">Sounds good, let's ship it on Friday.</text>
+    <rect x="378" y="150" width="9" height="19" fill="#34D399"/>
+  </g>
+</svg>
