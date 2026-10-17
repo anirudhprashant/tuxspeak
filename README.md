@@ -109,6 +109,7 @@ bind = , Alt_R, exec, xhisper-ptt
 |---|---|
 | `xhisper-gemini` | Record, transcribe, polish, type (what Alt+Space runs) |
 | `xhisper-gui` | Popup with the last dictation, Copy and History buttons |
+| `xhisper-gui --history` | Open the full history window directly (the "xhisper History" launcher entry runs this) |
 | `xhisper-ptt` | Hold-to-talk: start recording while Alt is held (bind to a bare Alt press) |
 | `xhisper-stop` | Stop an active recording (bind to a lone Alt release) |
 | `xhisper-last` | Print the last polished dictation |

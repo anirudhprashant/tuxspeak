@@ -2,7 +2,7 @@
 Type=Application
 Name=xhisper History
 Comment=View dictation history
-Exec=x-terminal-emulator -e xhisper-history
+Exec=xhisper-gui --history
 Icon=accessories-text-editor
 Terminal=false
 Categories=Utility;

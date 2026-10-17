@@ -17,7 +17,9 @@ LOGFILE="/tmp/xhisper-gemini.log"
 HISTORY_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/xhisper/history.txt"
 PROCESS_PATTERN="pw-record.*$RECORDING"
 INDICATOR="/tmp/xhisper-gemini.indicator"
+INDICATOR_COUNT="/tmp/xhisper-gemini.indicator-count"  # marker characters typed so far
 RECORDING_MARK="(recording...)"
+MARKER_DELAY=0.03   # seconds between marker characters, so it types in rather than popping in
 
 # Ensure history directory and file exist
 mkdir -p "$(dirname "$HISTORY_FILE")"
@@ -90,14 +92,27 @@ type_run() {
 
 # Hold mode: Alt is down while the marker is typed, and Alt+key would be wrong
 # in terminals and apps. Hyprland's send_shortcut sends each key with explicit
-# (empty) modifiers instead, so the held Alt is ignored. Batched into one call.
+# (empty) modifiers instead, so the held Alt is ignored.
 type_marker_hyprland() {
   command -v hyprctl &> /dev/null || return 1
-  local batch="" k
+  local k n=0
   for k in SHIFT:9 :r :e :c :o :r :d :i :n :g :period :period :period SHIFT:0; do
-    batch+="dispatch hl.dsp.send_shortcut({mods=\"${k%%:*}\", key=\"${k##*:}\"}) ; "
+    [ -f "$INDICATOR" ] || return 0   # recording already stopped
+    hyprctl dispatch "hl.dsp.send_shortcut({mods=\"${k%%:*}\", key=\"${k##*:}\"})" &> /dev/null || return 1
+    echo $((++n)) > "$INDICATOR_COUNT"
+    sleep "$MARKER_DELAY"
   done
-  hyprctl --batch "${batch% ; }" &> /dev/null
+}
+
+# Toggle mode: same pacing through the daemon.
+type_marker_slow() {
+  local i
+  for ((i=0; i<${#1}; i++)); do
+    [ -f "$INDICATOR" ] || return 0   # recording already stopped
+    xhispertool type "${1:$i:1}"
+    echo $((i+1)) > "$INDICATOR_COUNT"
+    sleep "$MARKER_DELAY"
+  done
 }
 
 # Type text: runs of printable ASCII go to the daemon in one call,
@@ -217,20 +232,18 @@ if [ -n "$RECORDING_PID" ]; then
   pkill -f "$PROCESS_PATTERN"
   for _ in $(seq 50); do pgrep -f "$PROCESS_PATTERN" > /dev/null || break; sleep 0.02; done
 
-  # Remove the "(recording...)" marker once Alt is surely released
+  # Remove the "(recording...)" marker once Alt is surely released. The typer
+  # stops when the indicator file goes, so wait for it, then delete exactly
+  # what was typed.
   if [ -f "$INDICATOR" ]; then
     rm -f "$INDICATOR"
-    ( sleep 0.2; for ((i=0; i<${#RECORDING_MARK}; i++)); do xhispertool backspace; done ) &
+    (
+      sleep 0.2
+      n=$(cat "$INDICATOR_COUNT" 2>/dev/null || echo 0)
+      for ((i=0; i<n; i++)); do xhispertool backspace; sleep "$MARKER_DELAY"; done
+      rm -f "$INDICATOR_COUNT"
+    ) &
     DELETE_PID=$!
-  fi
-
-  # Too short to be speech (stray Alt press); Whisper hallucinates on these.
-  # 16 kHz mono s16 is 32000 bytes/s, so 19200 bytes is about 0.6s.
-  if [ "$(stat -c %s "$RECORDING" 2>/dev/null || echo 0)" -lt 19200 ]; then
-    echo "DEBUG: Recording too short, discarded" >> "$LOGFILE"
-    [ -n "$DELETE_PID" ] && wait "$DELETE_PID"
-    rm -f "$RECORDING"
-    exit 0
   fi
 
   # Silence check runs alongside the transcription request
@@ -281,11 +294,12 @@ else
   # stays down for the whole recording, so the marker goes through Hyprland.
   [ -z "$XHISPER_PTT" ] && sleep 0.25
   if kill -0 "$PW_PID" 2>/dev/null; then
+    echo 0 > "$INDICATOR_COUNT"
     touch "$INDICATOR"
     if [ -n "$XHISPER_PTT" ]; then
-      type_marker_hyprland || type_run "$RECORDING_MARK"
+      type_marker_hyprland || type_marker_slow "$RECORDING_MARK"
     else
-      type_run "$RECORDING_MARK"
+      type_marker_slow "$RECORDING_MARK"
     fi
   fi
   wait "$PW_PID"
