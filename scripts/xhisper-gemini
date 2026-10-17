@@ -19,7 +19,8 @@ PROCESS_PATTERN="pw-record.*$RECORDING"
 INDICATOR="/tmp/xhisper-gemini.indicator"
 INDICATOR_COUNT="/tmp/xhisper-gemini.indicator-count"  # marker characters typed so far
 RECORDING_MARK="(recording...)"
-MARKER_DELAY=0.03   # seconds between marker characters, so it types in rather than popping in
+MARKER_DELAY=0.01      # seconds between marker characters, so it types in rather than popping in
+BACKSPACE_DELAY=0.005  # seconds between backspaces when the marker is removed
 
 # Ensure history directory and file exist
 mkdir -p "$(dirname "$HISTORY_FILE")"
@@ -240,7 +241,7 @@ if [ -n "$RECORDING_PID" ]; then
     (
       sleep 0.2
       n=$(cat "$INDICATOR_COUNT" 2>/dev/null || echo 0)
-      for ((i=0; i<n; i++)); do xhispertool backspace; sleep "$MARKER_DELAY"; done
+      for ((i=0; i<n; i++)); do xhispertool backspace; sleep "$BACKSPACE_DELAY"; done
       rm -f "$INDICATOR_COUNT"
     ) &
     DELETE_PID=$!
