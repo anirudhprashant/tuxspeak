@@ -16,6 +16,8 @@ RECORDING="/tmp/xhisper-gemini.wav"
 LOGFILE="/tmp/xhisper-gemini.log"
 HISTORY_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/xhisper/history.txt"
 PROCESS_PATTERN="pw-record.*$RECORDING"
+INDICATOR="/tmp/xhisper-gemini.indicator"
+RECORDING_MARK="(recording...)"
 
 # Ensure history directory and file exist
 mkdir -p "$(dirname "$HISTORY_FILE")"
@@ -53,7 +55,6 @@ if ! pgrep -x xhispertoold > /dev/null; then
     xhispertoold 2>> /tmp/xhispertoold.log &
     sleep 1  # Give daemon time to start
 
-    # Verify daemon started successfully
     if ! pgrep -x xhispertoold > /dev/null; then
         echo "DEBUG: Failed to start xhispertoold daemon" >> "$LOGFILE"
         echo "Error: Failed to start xhispertoold daemon" >&2
@@ -72,51 +73,49 @@ fi
 # Detect clipboard tool (test if it actually works, not just if it exists)
 if command -v xclip &> /dev/null; then
   CLIP_COPY="xclip -selection clipboard"
-  CLIP_PASTE="xclip -o -selection clipboard"
 elif command -v wl-copy &> /dev/null && echo "test" | wl-copy 2>/dev/null; then
   CLIP_COPY="wl-copy"
-  CLIP_PASTE="wl-paste"
 else
   echo "Error: No clipboard tool found. Install xclip or wl-clipboard." >&2
   exit 1
 fi
 
+# One call per run; falls back to one call per character for an xhispertool
+# build that only accepts a single character.
+type_run() {
+  xhispertool type "$1" 2>/dev/null && return 0
+  local i
+  for ((i=0; i<${#1}; i++)); do xhispertool type "${1:$i:1}"; done
+}
+
+# Type text: runs of printable ASCII go to the daemon in one call,
+# anything else (unicode, newlines) goes through the clipboard.
 paste() {
-  local text="$1"
+  local text="$1" ch code run=""
   echo "DEBUG: Pasting text: [$text]" >> "$LOGFILE"
-  for ((i=0; i<${#text}; i++)); do
-    local char="${text:$i:1}"
-    local ascii=$(printf '%d' "'$char")
-    if [[ $ascii -ge 32 && $ascii -le 126 ]]; then
-      xhispertool type "$char"
+  while IFS= read -r -N1 ch; do
+    printf -v code '%d' "'$ch"
+    if [[ $code -ge 32 && $code -le 126 ]]; then
+      run+="$ch"
     else
-      echo -n "$char" | $CLIP_COPY 2>/dev/null
+      [ -n "$run" ] && type_run "$run" && run=""
+      echo -n "$ch" | $CLIP_COPY 2>/dev/null
       xhispertool paste
-      [ "$i" -eq 0 ] && sleep "$non_ascii_initial_delay" || sleep "$non_ascii_default_delay"
+      sleep "$non_ascii_default_delay"
     fi
-  done
+  done < <(printf '%s' "$text")
+  [ -n "$run" ] && type_run "$run"
 }
 
-delete_n_chars() {
-  local n="$1"
-  for ((i=0; i<n; i++)); do
-    xhispertool backspace
-  done
-}
-
+# Recording length in seconds (16 kHz mono s16 = 32000 bytes/s)
 get_duration() {
-  ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$recording" 2>/dev/null || echo "0"
+  echo $(( $(stat -c %s "$1" 2>/dev/null || echo 0) / 32000 ))
 }
 
 is_silent() {
-  local recording="$1"
-  local vol_stats=$(ffmpeg -i "$recording" -af "volumedetect" -f null /dev/null 2>&1 | grep -E "mean_volume|max_volume")
-  local max_vol=$(echo "$vol_stats" | grep "max_volume" | awk '{print $5}')
-  if [ -n "$max_vol" ]; then
-    local is_quiet=$(echo "$max_vol < $silence_threshold" | bc -l)
-    [ "$is_quiet" -eq 1 ] && return 0
-  fi
-  return 1
+  local max_vol
+  max_vol=$(ffmpeg -i "$1" -af volumedetect -f null /dev/null 2>&1 | awk '/max_volume/ {print $5}')
+  [ -n "$max_vol" ] && awk -v v="$max_vol" -v t="$silence_threshold" 'BEGIN { exit !(v < t) }'
 }
 
 save_to_history() {
@@ -124,100 +123,120 @@ save_to_history() {
   local raw_transcription="$2"
   local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> "$HISTORY_FILE"
-  echo "$timestamp" >> "$HISTORY_FILE"
-  echo "" >> "$HISTORY_FILE"
-  echo "Polished:" >> "$HISTORY_FILE"
-  echo "$text" >> "$HISTORY_FILE"
-  echo "" >> "$HISTORY_FILE"
-  echo "Raw transcription:" >> "$HISTORY_FILE"
-  echo "$raw_transcription" >> "$HISTORY_FILE"
-  echo "" >> "$HISTORY_FILE"
+  {
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "$timestamp"
+    echo ""
+    echo "Polished:"
+    echo "$text"
+    echo ""
+    echo "Raw transcription:"
+    echo "$raw_transcription"
+    echo ""
+  } >> "$HISTORY_FILE"
 }
 
 transcribe() {
   local recording="$1"
-  local is_long_recording=$(echo "$(get_duration "$recording") > $long_recording_threshold" | bc -l)
-  local model=$([[ $is_long_recording -eq 1 ]] && echo "whisper-large-v3" || echo "whisper-large-v3-turbo")
+  local model="whisper-large-v3-turbo"
+  [ "$(get_duration "$recording")" -gt "$long_recording_threshold" ] && model="whisper-large-v3"
 
-  local transcription=$(curl -s -X POST "https://api.groq.com/openai/v1/audio/transcriptions" \
+  curl -s -X POST "https://api.groq.com/openai/v1/audio/transcriptions" \
     -H "Authorization: Bearer $GROQ_API_KEY" \
     -H "Content-Type: multipart/form-data" \
     -F "file=@$recording" \
     -F "model=$model" \
     -F "prompt=$transcription_prompt" \
-    | jq -r '.text' | sed 's/^ //')
+    | jq -r '.text // empty' | sed 's/^ //'
+}
 
-  echo "$transcription"
+polish_prompt() {
+  printf '%s\n\n%s' "Fix any obvious spelling, grammar, or transcription errors in this dictated text. Do NOT rephrase, restructure sentences, or change the tone. Preserve the original wording as much as possible. Only fix things that are clearly wrong. Return ONLY the corrected text, no explanations:" "$1"
+}
+
+clean_polish() {
+  sed -e 's/^```\|```$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+# Fastest option: gpt-oss-20b on Groq (same key as transcription)
+polish_with_groq() {
+  local body response
+  body=$(jq -n --arg t "$(polish_prompt "$1")" \
+    '{model: "openai/gpt-oss-20b", reasoning_effort: "low", max_completion_tokens: 2048, messages: [{role: "user", content: $t}]}')
+
+  response=$(curl -s --max-time 8 -X POST "https://api.groq.com/openai/v1/chat/completions" \
+    -H "Authorization: Bearer $GROQ_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "$body")
+
+  echo "DEBUG: Groq polish response: $response" >> "$LOGFILE"
+  echo "$response" | jq -r '.choices[0].message.content // empty' | clean_polish
 }
 
 polish_with_gemini() {
-  local text="$1"
+  local body response
+  body=$(jq -n --arg t "$(polish_prompt "$1")" '{contents: [{parts: [{text: $t}]}]}')
 
-  local response=$(curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=$API_KEY" \
+  response=$(curl -s --max-time 10 -X POST \
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent" \
+    -H "x-goog-api-key: $API_KEY" \
     -H "Content-Type: application/json" \
-    -d "{
-      \"contents\": [{
-        \"parts\": [{
-          \"text\": \"Fix any obvious spelling, grammar, or transcription errors in this dictated text. Do NOT rephrase, restructure sentences, or change the tone. Preserve the original wording as much as possible. Only fix things that are clearly wrong. Return ONLY the corrected text, no explanations:\\n\\n$text\"
-        }]
-      }]
-    }")
+    -d "$body")
 
   echo "DEBUG: Gemini API response: $response" >> "$LOGFILE"
+  echo "$response" | jq -r '.candidates[0].content.parts[0].text // empty' | clean_polish
+}
 
-  # Try to extract polished text, fallback to alternative paths
-  local polished=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text // .candidates[0].content.parts[0].string // empty' | sed 's/^```\|```$//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-  echo "$polished"
+polish() {
+  local out
+  out=$(polish_with_groq "$1")
+  [ -z "$out" ] && out=$(polish_with_gemini "$1")
+  echo "$out"
 }
 
 # Main
 
 echo "DEBUG: xhisper-gemini started at $(date)" >> "$LOGFILE"
 
-# Add longer delay to prevent double-triggering from keybinding
-sleep 0.3
-
-# Check if recording is running
 RECORDING_PID=$(pgrep -f "$PROCESS_PATTERN" | head -1)
 if [ -n "$RECORDING_PID" ]; then
-  # Stop recording
+  # Stop recording and wait for pw-record to finish writing the file
   echo "DEBUG: Stopping recording (PID: $RECORDING_PID)" >> "$LOGFILE"
   pkill -f "$PROCESS_PATTERN"
-  sleep 0.5  # Wait for recording to fully stop
-  delete_n_chars 14 # "(recording...)"
+  for _ in $(seq 50); do pgrep -f "$PROCESS_PATTERN" > /dev/null || break; sleep 0.02; done
 
-  # Check for silence
-  if is_silent "$RECORDING"; then
-    paste "(no sound detected)"
-    sleep 0.3
-    delete_n_chars 19
-    rm -f "$RECORDING"
-    exit 0
+  # Remove the "(recording...)" marker once Alt is surely released
+  if [ -f "$INDICATOR" ]; then
+    rm -f "$INDICATOR"
+    ( sleep 0.2; for ((i=0; i<${#RECORDING_MARK}; i++)); do xhispertool backspace; done ) &
+    DELETE_PID=$!
   fi
 
-  paste "(transcribing...)"
-  TRANSCRIPTION=$(transcribe "$RECORDING")
+  # Silence check runs alongside the transcription request
+  TMP_OUT=$(mktemp)
+  transcribe "$RECORDING" > "$TMP_OUT" &
+  TRANSCRIBE_PID=$!
+  if is_silent "$RECORDING"; then
+    kill "$TRANSCRIBE_PID" 2>/dev/null
+    [ -n "$DELETE_PID" ] && wait "$DELETE_PID"
+    rm -f "$TMP_OUT" "$RECORDING"
+    exit 0
+  fi
+  wait "$TRANSCRIBE_PID"
+  TRANSCRIPTION=$(<"$TMP_OUT")
+  [ -n "$DELETE_PID" ] && wait "$DELETE_PID"
+  rm -f "$TMP_OUT"
   echo "DEBUG: Raw transcription: [$TRANSCRIPTION]" >> "$LOGFILE"
-  sleep 0.3  # Wait longer for typing to complete
-  delete_n_chars 17 # "(transcribing...)"
 
   if [ -z "$TRANSCRIPTION" ] || [ "$TRANSCRIPTION" = "null" ]; then
-    paste "(no transcription)"
-    sleep 0.3
-    delete_n_chars 17
     rm -f "$RECORDING"
     exit 0
   fi
 
-  paste "(polishing...)"
-  POLISHED=$(polish_with_gemini "$TRANSCRIPTION")
+  POLISHED=$(polish "$TRANSCRIPTION")
   echo "DEBUG: Polished response: [$POLISHED]" >> "$LOGFILE"
-  sleep 0.3  # Wait longer for typing to complete
-  delete_n_chars 15 # Delete one extra character in case of double-trigger space
 
-  # Clean up leading artifacts - simpler approach
+  # Clean up leading artifacts
   POLISHED=$(echo "$POLISHED" | sed -e 's/^[([{]*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
   echo "DEBUG: After cleanup: [$POLISHED]" >> "$LOGFILE"
 
@@ -226,7 +245,6 @@ if [ -n "$RECORDING_PID" ]; then
     save_to_history "$POLISHED" "$TRANSCRIPTION"
   else
     # Fallback to raw transcription if polishing fails
-    # Clean up raw transcription too
     TRANSCRIPTION=$(echo "$TRANSCRIPTION" | sed -e 's/^[([{]*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
     paste "$TRANSCRIPTION"
     save_to_history "$TRANSCRIPTION" "(polishing failed)"
@@ -236,9 +254,15 @@ if [ -n "$RECORDING_PID" ]; then
 else
   # Start recording
   echo "DEBUG: Starting recording" >> "$LOGFILE"
-  sleep 0.2
-  paste "(recording...)"
-  pw-record --channels=1 --rate=16000 "$RECORDING"
+  pw-record --channels=1 --rate=16000 "$RECORDING" &
+  PW_PID=$!
+  # Wait for Alt to be released first, or the typed text would arrive as Alt+key
+  sleep 0.25
+  if kill -0 "$PW_PID" 2>/dev/null; then
+    touch "$INDICATOR"
+    type_run "$RECORDING_MARK"
+  fi
+  wait "$PW_PID"
 fi
 
 echo "DEBUG: xhisper-gemini ended at $(date)" >> "$LOGFILE"

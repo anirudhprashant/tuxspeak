@@ -33,7 +33,7 @@ You need Linux with PipeWire and two free keys, no card required:
 | Key | Does | Get it |
 |---|---|---|
 | **Groq** | Speech to text (Whisper) | [console.groq.com/keys](https://console.groq.com/keys) |
-| **Gemini** | Cleans up the text (Gemini 3.1 Flash Lite) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| **Gemini** | Fallback for cleaning up the text if the Groq call fails (Gemini 3.1 Flash Lite) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 
 <details>
 <summary><b>Let an AI agent install it for you</b></summary>
@@ -58,12 +58,14 @@ Install TuxSpeak on my Linux machine:
 flowchart LR
   A(["Alt+Space"]) --> B["Record<br/>PipeWire"]
   B --> C["Transcribe<br/>Groq Whisper"]
-  C --> D["Polish<br/>Gemini"]
+  C --> D["Polish<br/>Groq gpt-oss-20b"]
   D --> E["Type at cursor<br/>virtual keyboard"]
 ```
 
 - **Silence cancels.** If nothing was said, nothing is typed.
-- **Polish can't lose your words.** If Gemini fails, you get the raw transcript instead.
+- **Polish can't lose your words.** If the Groq polish fails it retries with Gemini, and if that fails too you get the raw transcript.
+- **Stop with a tap of Alt.** Alt+Space starts recording, then tap Alt on its own (or press Alt+Space again) to stop.
+- **Status stays in the text box.** A `(recording...)` marker shows while recording and is removed when you stop. No notifications.
 - **Every dictation is saved**, raw and polished, with a timestamp.
 - **Long recordings** switch automatically to the larger Whisper model.
 
@@ -86,12 +88,20 @@ gsettings set org.gnome.desktop.wm.keybindings activate-window-menu "[]"
 
 **Hyprland · Sway · i3**: bind `xhisper-gemini` to Alt+Space in your config, e.g. `bind = ALT, SPACE, exec, xhisper-gemini`.
 
+To stop with a lone Alt tap on Hyprland, also bind `xhisper-stop` on Alt release (Hyprland doesn't fire it for the Alt released after the Alt+Space chord, so a tap is always a real stop):
+
+```
+bindr = ALT, Alt_L, exec, xhisper-stop
+bindr = ALT, Alt_R, exec, xhisper-stop
+```
+
 ## Commands
 
 | Command | Does |
 |---|---|
 | `xhisper-gemini` | Record, transcribe, polish, type (what Alt+Space runs) |
 | `xhisper-gui` | Popup with the last dictation, Copy and History buttons |
+| `xhisper-stop` | Stop an active recording (bind to a lone Alt release) |
 | `xhisper-last` | Print the last polished dictation |
 | `xhisper-history` | Print the full history |
 
@@ -122,7 +132,7 @@ cp /usr/local/share/xhisper/default_xhisperrc ~/.config/xhisper/xhisperrc
 | Nothing happens | Start the daemon: `xhispertoold &` |
 | `uinput permission denied` | Reboot, or `sudo usermod -aG input $USER` and log in again |
 | Recording but no text | Check the Groq key in `~/.env`, then read `/tmp/xhisper-gemini.log` |
-| Text not polished | Check the Gemini key. Raw text is typed as a fallback |
+| Text not polished | Check the Groq and Gemini keys. Raw text is typed as a fallback |
 | Unicode doesn't paste | Install `wl-clipboard` (Wayland) or `xclip` (X11) |
 
 ## Privacy

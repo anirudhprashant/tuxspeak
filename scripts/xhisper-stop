@@ -1,0 +1,12 @@
+#!/bin/bash
+# xhisper-stop - bound to a lone Alt release; stops an active recording.
+# Hyprland doesn't fire this for the Alt released after an Alt+Space chord,
+# so any Alt tap that reaches here while recording is a real stop.
+
+LOGFILE="/tmp/xhisper-gemini.log"
+RECORDING="/tmp/xhisper-gemini.wav"
+
+if pgrep -f "pw-record.*$RECORDING" > /dev/null; then
+  echo "DEBUG: xhisper-stop stopping" >> "$LOGFILE"
+  exec xhisper-gemini
+fi

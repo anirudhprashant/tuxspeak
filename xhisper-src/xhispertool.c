@@ -334,7 +334,7 @@ void show_usage() {
     fprintf(stderr,
         "Usage:\n"
         "  xhispertool paste            - Paste from clipboard (Ctrl+V)\n"
-        "  xhispertool type <char>      - Type a single ASCII character\n"
+        "  xhispertool type <text>      - Type ASCII text\n"
         "  xhispertool backspace        - Press backspace\n"
         "\n"
         "Input switching keys:\n"
@@ -418,15 +418,24 @@ int run_client(int argc, char *argv[]) {
         buf[0] = 'M';
         len = 1;
     } else if (strcmp(argv[1], "type") == 0) {
-        if (argc != 3 || strlen(argv[2]) != 1) {
-            fprintf(stderr, "Error: 'type' requires exactly one character argument\n");
+        if (argc != 3 || argv[2][0] == '\0') {
+            fprintf(stderr, "Error: 'type' requires a non-empty string argument\n");
             show_usage();
             close(fd);
             return 1;
         }
-        buf[0] = 't';
-        buf[1] = argv[2][0];
-        len = 2;
+        // One datagram per character; the daemon types them in order.
+        for (const char *p = argv[2]; *p; p++) {
+            buf[0] = 't';
+            buf[1] = *p;
+            if (write(fd, buf, 2) != 2) {
+                perror("failed to send command");
+                close(fd);
+                return 1;
+            }
+        }
+        close(fd);
+        return 0;
     } else {
         fprintf(stderr, "Error: Unknown command '%s'\n", argv[1]);
         show_usage();

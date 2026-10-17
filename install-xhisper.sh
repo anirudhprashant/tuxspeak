@@ -42,6 +42,7 @@ cp "$SCRIPT_DIR/scripts/xhisper-gemini" ~/.local/bin/
 cp "$SCRIPT_DIR/scripts/xhisper-gui" ~/.local/bin/
 cp "$SCRIPT_DIR/scripts/xhisper-history" ~/.local/bin/
 cp "$SCRIPT_DIR/scripts/xhisper-last" ~/.local/bin/
+cp "$SCRIPT_DIR/scripts/xhisper-stop" ~/.local/bin/
 chmod +x ~/.local/bin/xhisper-*
 
 # Copy desktop entries
