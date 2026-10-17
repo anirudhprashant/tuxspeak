@@ -65,6 +65,7 @@ flowchart LR
 - **Silence cancels.** If nothing was said, nothing is typed.
 - **Polish can't lose your words.** If the Groq polish fails it retries with Gemini, and if that fails too you get the raw transcript.
 - **Stop with a tap of Alt.** Alt+Space starts recording, then tap Alt on its own (or press Alt+Space again) to stop.
+- **Or hold Alt to talk.** Hold Alt for a quarter of a second to record, let go to stop (Hyprland setup below). Clips under about 0.6s are discarded.
 - **Status stays in the text box.** A `(recording...)` marker shows while recording and is removed when you stop. No notifications.
 - **Every dictation is saved**, raw and polished, with a timestamp.
 - **Long recordings** switch automatically to the larger Whisper model.
@@ -95,12 +96,20 @@ bindr = ALT, Alt_L, exec, xhisper-stop
 bindr = ALT, Alt_R, exec, xhisper-stop
 ```
 
+For hold-Alt-to-talk, also bind `xhisper-ptt` on a bare Alt press. It waits 0.25s, so Alt+Space and quick taps don't start a recording. Holding Alt for other shortcuts longer than that can start one, and it keeps running until your next lone Alt tap:
+
+```
+bind = , Alt_L, exec, xhisper-ptt
+bind = , Alt_R, exec, xhisper-ptt
+```
+
 ## Commands
 
 | Command | Does |
 |---|---|
 | `xhisper-gemini` | Record, transcribe, polish, type (what Alt+Space runs) |
 | `xhisper-gui` | Popup with the last dictation, Copy and History buttons |
+| `xhisper-ptt` | Hold-to-talk: start recording while Alt is held (bind to a bare Alt press) |
 | `xhisper-stop` | Stop an active recording (bind to a lone Alt release) |
 | `xhisper-last` | Print the last polished dictation |
 | `xhisper-history` | Print the full history |

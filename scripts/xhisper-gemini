@@ -212,6 +212,15 @@ if [ -n "$RECORDING_PID" ]; then
     DELETE_PID=$!
   fi
 
+  # Too short to be speech (stray Alt press); Whisper hallucinates on these.
+  # 16 kHz mono s16 is 32000 bytes/s, so 19200 bytes is about 0.6s.
+  if [ "$(stat -c %s "$RECORDING" 2>/dev/null || echo 0)" -lt 19200 ]; then
+    echo "DEBUG: Recording too short, discarded" >> "$LOGFILE"
+    [ -n "$DELETE_PID" ] && wait "$DELETE_PID"
+    rm -f "$RECORDING"
+    exit 0
+  fi
+
   # Silence check runs alongside the transcription request
   TMP_OUT=$(mktemp)
   transcribe "$RECORDING" > "$TMP_OUT" &
@@ -257,8 +266,9 @@ else
   pw-record --channels=1 --rate=16000 "$RECORDING" &
   PW_PID=$!
   # Wait for Alt to be released first, or the typed text would arrive as Alt+key
+  # (Skipped in hold-Alt mode: Alt is held for the whole recording.)
   sleep 0.25
-  if kill -0 "$PW_PID" 2>/dev/null; then
+  if [ -z "$XHISPER_PTT" ] && kill -0 "$PW_PID" 2>/dev/null; then
     touch "$INDICATOR"
     type_run "$RECORDING_MARK"
   fi

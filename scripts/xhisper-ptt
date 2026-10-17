@@ -1,0 +1,29 @@
+#!/bin/bash
+# xhisper-ptt - bound to a lone Alt press: hold Alt to record, release to stop.
+# Waits a moment so Alt+Space and quick Alt taps don't start a recording.
+
+LOGFILE="/tmp/xhisper-gemini.log"
+RECORDING="/tmp/xhisper-gemini.wav"
+ALT_UP="/tmp/xhisper-gemini.alt-up"
+HOLD_DELAY=0.25
+
+recording() { pgrep -f "pw-record.*$RECORDING" > /dev/null; }
+
+rm -f "$ALT_UP"
+sleep "$HOLD_DELAY"
+
+# Released already (a tap), or something else (Alt+Space) already started it
+[ -e "$ALT_UP" ] && exit 0
+recording && exit 0
+
+echo "DEBUG: xhisper-ptt starting (Alt held)" >> "$LOGFILE"
+XHISPER_PTT=1 xhisper-gemini &
+START_PID=$!
+
+# Alt may have come up while the recorder was starting
+sleep 0.15
+if [ -e "$ALT_UP" ] && recording; then
+  echo "DEBUG: xhisper-ptt: Alt released during start, stopping" >> "$LOGFILE"
+  xhisper-gemini
+fi
+wait "$START_PID"
