@@ -24,7 +24,7 @@ git clone https://github.com/anirudhprashant/tuxspeak.git
 cd tuxspeak && ./install-xhisper.sh
 ```
 
-The installer handles dependencies, asks for two free API keys, builds the typing daemon
+The installer handles dependencies (`pacman` on Arch and derivatives, `apt` on Debian and Ubuntu), asks for two free API keys, builds the typing daemon
 and sets up permissions. **Reboot once** if it adds you to the `input` group, then bind
 the shortcut ([below](#bind-altspace)).
 

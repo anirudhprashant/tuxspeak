@@ -4,27 +4,32 @@ set -euo pipefail
 echo "=== TuxSpeak - One-Click Installer ==="
 echo ""
 
-# Check dependencies
+# Check dependencies (command names, not package names)
 echo "Checking dependencies..."
 MISSING=""
-for dep in curl jq ffmpeg gcc make yad xdotool xclip wl-clipboard; do
+for dep in curl jq ffmpeg gcc make yad xdotool xclip wl-copy pw-record; do
   if ! command -v "$dep" &>/dev/null; then
     MISSING="$MISSING $dep"
   fi
 done
 
 if [ -n "$MISSING" ]; then
-  echo "Installing missing packages:$MISSING"
-  sudo apt update -qq
-  sudo apt install -y $MISSING
+  echo "Missing commands:$MISSING"
+  if command -v pacman &>/dev/null; then
+    # Arch, Manjaro, EndeavourOS, Omarchy, ...
+    sudo pacman -S --needed --noconfirm curl jq ffmpeg gcc make yad xdotool xclip \
+      wl-clipboard pipewire
+  elif command -v apt &>/dev/null; then
+    # Debian, Ubuntu, ...
+    sudo apt update -qq
+    sudo apt install -y curl jq ffmpeg gcc make yad xdotool xclip wl-clipboard pipewire-utils \
+      || sudo apt install -y curl jq ffmpeg gcc make yad xdotool xclip wl-clipboard pipewire
+  else
+    echo "No supported package manager (pacman or apt). Install these yourself:$MISSING" >&2
+    exit 1
+  fi
 else
   echo "All dependencies present."
-fi
-
-# Ensure pipewire tools are available (for pw-record)
-if ! command -v pw-record &>/dev/null; then
-  echo "Installing pipewire tools..."
-  sudo apt install -y pipewire-utils 2>/dev/null || sudo apt install -y pipewire 2>/dev/null || true
 fi
 
 # Create directories
