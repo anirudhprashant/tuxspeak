@@ -65,7 +65,7 @@ flowchart LR
 - **Silence cancels.** If nothing was said, nothing is typed.
 - **Polish can't lose your words.** If the Groq polish fails it retries with Gemini, and if that fails too you get the raw transcript.
 - **Stop with a tap of Alt.** Alt+Space starts recording, then tap Alt on its own (or press Alt+Space again) to stop.
-- **Or hold Alt to talk.** Hold Alt for a quarter of a second to record, let go to stop (Hyprland setup below). Clips under about 0.6s are discarded.
+- **Or hold Alt to talk.** Hold Alt for a quarter of a second to record, let go to stop (Hyprland setup below). Clips under about 0.6s are discarded. The `(recording...)` marker shows in hold mode too.
 - **Status stays in the text box.** A `(recording...)` marker shows while recording and is removed when you stop. No notifications.
 - **Every dictation is saved**, raw and polished, with a timestamp.
 - **Long recordings** switch automatically to the larger Whisper model.
@@ -118,6 +118,15 @@ History lives in `~/.local/share/xhisper/history.txt`. Keys live in `~/.env`.
 
 > [!NOTE]
 > `xhisper-gui` places itself for a 1920×1080 screen. On other resolutions, edit `X_POS` and `Y_POS` in `~/.local/bin/xhisper-gui`.
+
+On Hyprland the popup would be tiled, so add a rule to float it small in the bottom-right corner (this also fixes the placement on any resolution). In `hyprland.conf`:
+
+```
+windowrule = float, class:^(xhisper)$
+windowrule = size 340 280, class:^(xhisper)$, title:^(xhisper)$
+windowrule = size 380 400, class:^(xhisper)$, title:^(xhisper History)$
+windowrule = move (monitor_w-w-20) (monitor_h-h-60), class:^(xhisper)$
+```
 
 ## Configure
 

@@ -88,6 +88,18 @@ type_run() {
   for ((i=0; i<${#1}; i++)); do xhispertool type "${1:$i:1}"; done
 }
 
+# Hold mode: Alt is down while the marker is typed, and Alt+key would be wrong
+# in terminals and apps. Hyprland's send_shortcut sends each key with explicit
+# (empty) modifiers instead, so the held Alt is ignored. Batched into one call.
+type_marker_hyprland() {
+  command -v hyprctl &> /dev/null || return 1
+  local batch="" k
+  for k in SHIFT:9 :r :e :c :o :r :d :i :n :g :period :period :period SHIFT:0; do
+    batch+="dispatch hl.dsp.send_shortcut({mods=\"${k%%:*}\", key=\"${k##*:}\"}) ; "
+  done
+  hyprctl --batch "${batch% ; }" &> /dev/null
+}
+
 # Type text: runs of printable ASCII go to the daemon in one call,
 # anything else (unicode, newlines) goes through the clipboard.
 paste() {
@@ -265,12 +277,16 @@ else
   echo "DEBUG: Starting recording" >> "$LOGFILE"
   pw-record --channels=1 --rate=16000 "$RECORDING" &
   PW_PID=$!
-  # Wait for Alt to be released first, or the typed text would arrive as Alt+key
-  # (Skipped in hold-Alt mode: Alt is held for the whole recording.)
-  sleep 0.25
-  if [ -z "$XHISPER_PTT" ] && kill -0 "$PW_PID" 2>/dev/null; then
+  # Toggle mode waits briefly for Alt+Space to be released. In hold mode Alt
+  # stays down for the whole recording, so the marker goes through Hyprland.
+  [ -z "$XHISPER_PTT" ] && sleep 0.25
+  if kill -0 "$PW_PID" 2>/dev/null; then
     touch "$INDICATOR"
-    type_run "$RECORDING_MARK"
+    if [ -n "$XHISPER_PTT" ]; then
+      type_marker_hyprland || type_run "$RECORDING_MARK"
+    else
+      type_run "$RECORDING_MARK"
+    fi
   fi
   wait "$PW_PID"
 fi
