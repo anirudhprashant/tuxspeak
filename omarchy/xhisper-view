@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+"""xhisper popups in the current Omarchy theme: last dictation, and history.
+
+    xhisper-view            last dictation (Copy / History / Close)
+    xhisper-view history    full history, newest first (Copy per entry / Back / Close)
+
+Both are layer-shell surfaces pinned bottom-right, so they are modal and never
+tiled. A transparent full-screen catcher sits behind them and closes the popup on
+a real click elsewhere (not on hover, which focus-follows-mouse would trigger).
+Esc closes too.
+"""
+import os
+import re
+import subprocess
+import sys
+import tomllib
+
+# gtk4-layer-shell must be loaded before libwayland-client, hence the re-exec.
+_LS = "/usr/lib/libgtk4-layer-shell.so"
+if _LS not in os.environ.get("LD_PRELOAD", ""):
+    os.environ["LD_PRELOAD"] = (_LS + ":" + os.environ.get("LD_PRELOAD", "")).rstrip(":")
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+from gi.repository import Gdk, GLib, Gtk, Gtk4LayerShell as LS  # noqa: E402
+
+HISTORY = os.path.join(os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")), "xhisper/history.txt")
+WIDTH = 520
+MAX_ENTRIES = 80
+
+
+def theme():
+    base = {"background": "#1a1b26", "lighter_background": "#24283b", "bright_foreground": "#c0caf5",
+            "dark_foreground": "#565f89", "muted": "#414868", "accent": "#7aa2f7"}
+    for d in ("~/.local/state/omarchy/current/theme", "~/.config/omarchy/current/theme"):
+        p = os.path.join(os.path.expanduser(d), "colors.toml")
+        if os.path.isfile(p):
+            try:
+                with open(p, "rb") as f:
+                    base.update({k: v for k, v in tomllib.load(f).items() if isinstance(v, str)})
+            except Exception:
+                pass
+            break
+    return base
+
+
+def entries():
+    """[(stamp, text)] newest first; polished text, falling back to the raw transcription."""
+    try:
+        raw = open(HISTORY, encoding="utf-8").read()
+    except OSError:
+        return []
+    out = []
+    for block in re.split(r"^━{5,}\n", raw, flags=re.M):
+        stamp = re.search(r"^(\d{4}-\d{2}-\d{2} [\d:]+)$", block, re.M)
+        text = re.search(r"^Polished:\n(.*?)\n(?:\nRaw transcription:|\Z)", block, re.M | re.S)
+        if not (text and text.group(1).strip()):
+            text = re.search(r"^Raw transcription:\n(.*?)(?:\n\n|\Z)", block, re.M | re.S)
+        if stamp and text and text.group(1).strip():
+            out.append((stamp.group(1), text.group(1).strip()))
+    return out[::-1][:MAX_ENTRIES]
+
+
+def css(c):
+    return f"""
+window.xh, window.catcher {{ background: transparent; }}
+.card-root {{
+  background: {c['background']}; color: {c['bright_foreground']};
+  border: 1px solid {c['muted']}; border-radius: 16px;
+  font-family: "JetBrainsMono Nerd Font", monospace;
+}}
+.eyebrow {{ color: {c['dark_foreground']}; font-size: 11px; letter-spacing: 2px; font-weight: bold; }}
+.stamp {{ color: {c['dark_foreground']}; font-size: 11px; }}
+.body {{ color: {c['bright_foreground']}; font-size: 15px; }}
+.entry {{ background: {c['lighter_background']}; border-radius: 10px; }}
+.entry .body {{ font-size: 13px; }}
+scrolledwindow, scrolledwindow viewport {{ background: transparent; }}
+button.btn {{
+  background: transparent; color: {c['bright_foreground']}; border: 1px solid {c['muted']};
+  border-radius: 9px; padding: 7px 18px; box-shadow: none; background-image: none; min-height: 0;
+}}
+button.btn:hover {{ border-color: {c['accent']}; background: {c['lighter_background']}; }}
+button.primary {{ background: {c['accent']}; color: {c['background']}; border-color: {c['accent']}; font-weight: bold; }}
+button.primary:hover {{ background: {c['accent']}; opacity: 0.88; }}
+button.ghost {{ border-color: transparent; color: {c['dark_foreground']}; }}
+button.ghost:hover {{ color: {c['bright_foreground']}; border-color: transparent; }}
+button.mini {{ padding: 3px 10px; font-size: 11px; color: {c['accent']}; border-color: transparent; }}
+button.mini:hover {{ border-color: {c['accent']}; }}
+"""
+
+
+def label(text, *classes, xalign=0.0, wrap=False, selectable=False):
+    l = Gtk.Label(label=text, xalign=xalign, wrap=wrap, selectable=selectable)
+    l.set_wrap_mode(2)  # Pango.WrapMode.WORD_CHAR
+    for k in classes:
+        l.add_css_class(k)
+    return l
+
+
+def button(text, *classes, on_click):
+    b = Gtk.Button(label=text)
+    b.add_css_class("btn")
+    for k in classes:
+        b.add_css_class(k)
+    b.connect("clicked", on_click)
+    return b
+
+
+def copy(text):
+    subprocess.run(["wl-copy"], input=text.encode(), check=False)
+
+
+class App(Gtk.Application):
+    def __init__(self, start):
+        super().__init__(application_id="com.xhisper.view")
+        self.start = start
+        self.win = None
+
+    def do_activate(self):
+        c = theme()
+        prov = Gtk.CssProvider()
+        prov.load_from_string(css(c))
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+        self.catcher = Gtk.Window(application=self, title="xhisper catcher")
+        self.catcher.add_css_class("catcher")
+        LS.init_for_window(self.catcher)
+        LS.set_namespace(self.catcher, "xhisper-catcher")
+        LS.set_layer(self.catcher, LS.Layer.TOP)
+        for e in (LS.Edge.TOP, LS.Edge.BOTTOM, LS.Edge.LEFT, LS.Edge.RIGHT):
+            LS.set_anchor(self.catcher, e, True)
+        LS.set_exclusive_zone(self.catcher, -1)
+        LS.set_keyboard_mode(self.catcher, LS.KeyboardMode.NONE)
+        click = Gtk.GestureClick()
+        click.connect("pressed", lambda *_: self.quit())
+        self.catcher.add_controller(click)
+        self.catcher.set_child(Gtk.Box())
+        self.catcher.present()
+        self.show(self.start)
+
+    def show(self, which):
+        old = self.win
+        self.win = self.build(which)
+        self.win.present()
+        if old:
+            old.destroy()
+
+    def on_key(self, _ctl, keyval, *_):
+        if keyval == Gdk.KEY_Escape:
+            self.quit()
+            return True
+        return False
+
+    def build(self, which):
+        hist = which == "history"
+        win = Gtk.ApplicationWindow(application=self, title="xhisper History" if hist else "xhisper")
+        win.add_css_class("xh")
+        win.set_decorated(False)
+        win.set_resizable(False)
+        win.set_default_size(WIDTH, 600 if hist else -1)
+        LS.init_for_window(win)
+        LS.set_namespace(win, "xhisper")
+        LS.set_layer(win, LS.Layer.OVERLAY)
+        LS.set_anchor(win, LS.Edge.BOTTOM, True)
+        LS.set_anchor(win, LS.Edge.RIGHT, True)
+        LS.set_margin(win, LS.Edge.BOTTOM, 24)
+        LS.set_margin(win, LS.Edge.RIGHT, 24)
+        LS.set_keyboard_mode(win, LS.KeyboardMode.EXCLUSIVE)
+
+        keys = Gtk.EventControllerKey()
+        keys.connect("key-pressed", self.on_key)
+        win.add_controller(keys)
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+        root.add_css_class("card-root")
+        for side in ("top", "bottom", "start", "end"):
+            getattr(root, f"set_margin_{side}")(0)
+        pad = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(pad, f"set_margin_{side}")(24)
+        root.append(pad)
+        win.set_child(root)
+
+        data = entries()
+        if hist:
+            self.history_view(pad, data)
+        else:
+            self.last_view(pad, data[0] if data else None)
+        return win
+
+    def last_view(self, box, latest):
+        head = Gtk.Box(spacing=10)
+        head.append(label("LAST DICTATION", "eyebrow"))
+        stamp = label(latest[0] if latest else "", "stamp", xalign=1.0)
+        stamp.set_hexpand(True)
+        head.append(stamp)
+        box.append(head)
+
+        text = latest[1] if latest else "No dictations yet."
+        body = label(text, "body", wrap=True)
+        body.set_max_width_chars(48)
+        body.set_margin_top(4)
+        body.set_margin_bottom(8)
+        box.append(body)
+
+        row = Gtk.Box(spacing=8)
+        row.set_halign(Gtk.Align.END)
+
+        def do_copy(b):
+            copy(text)
+            b.set_label("Copied ✓")
+            GLib.timeout_add(900, self.quit)
+
+        row.append(button("Close", "ghost", on_click=lambda _: self.quit()))
+        row.append(button("History", on_click=lambda _: self.show("history")))
+        cp = button("Copy", "primary", on_click=do_copy)
+        cp.set_sensitive(latest is not None)
+        row.append(cp)
+        box.append(row)
+
+    def history_view(self, box, data):
+        head = Gtk.Box(spacing=10)
+        head.append(label("HISTORY", "eyebrow"))
+        count = label(f"{len(data)} entries", "stamp", xalign=1.0)
+        count.set_hexpand(True)
+        head.append(count)
+        box.append(head)
+
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_vexpand(True)
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        lst = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        lst.set_margin_end(6)
+        if not data:
+            lst.append(label("No dictations yet.", "body"))
+        for stamp, text in data:
+            card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            card.add_css_class("entry")
+            for side in ("top", "bottom", "start", "end"):
+                getattr(card, f"set_margin_{side}")(0)
+            inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            for side in ("top", "bottom", "start", "end"):
+                getattr(inner, f"set_margin_{side}")(12)
+            top = Gtk.Box()
+            top.append(label(stamp, "stamp"))
+            cp = button("Copy", "mini", on_click=lambda b, t=text: (copy(t), b.set_label("Copied ✓")))
+            cp.set_hexpand(True)
+            cp.set_halign(Gtk.Align.END)
+            top.append(cp)
+            inner.append(top)
+            inner.append(label(text, "body", wrap=True))
+            card.append(inner)
+            lst.append(card)
+        scroll.set_child(lst)
+        box.append(scroll)
+
+        row = Gtk.Box(spacing=8)
+        row.set_halign(Gtk.Align.END)
+        row.append(button("Close", "ghost", on_click=lambda _: self.quit()))
+        row.append(button("Back", on_click=lambda _: self.show("last")))
+        box.append(row)
+
+
+if __name__ == "__main__":
+    app = App("history" if len(sys.argv) > 1 and sys.argv[1] == "history" else "last")
+    sys.exit(app.run([sys.argv[0]]))

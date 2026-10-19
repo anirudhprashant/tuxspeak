@@ -1,0 +1,10 @@
+#!/bin/bash
+# Omarchy bar action: open the last xhisper transcription, or close it if open.
+# xhisper-view closes itself on Esc or a click anywhere outside it.
+
+here=$(cd "$(dirname "$0")" && pgrep -f '[p]ython3.*xhisper-view' >/dev/null && echo open || echo "$PWD")
+if [ "$here" = open ]; then
+  pkill -f '[p]ython3.*xhisper-view'
+  exit 0
+fi
+setsid -f "$here/xhisper-view" >/dev/null 2>&1

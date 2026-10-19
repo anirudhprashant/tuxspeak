@@ -1,0 +1,12 @@
+#!/bin/bash
+# Omarchy bar module: xhisper status icon. Clicking it opens the last
+# transcription (xhisper-gui); right click opens the full history.
+# The bracket in the pattern stops pgrep matching its own command line.
+
+if pgrep -f 'pw-record.*[x]hisper-gemini\.wav' >/dev/null 2>&1; then
+  printf '{"text":"󰍬","tooltip":"Dictating now — click to open the last transcription","class":"active"}\n'
+elif pgrep -f '[x]hisper-gemini' >/dev/null 2>&1; then
+  printf '{"text":"󰔟","tooltip":"Transcribing…","class":"active"}\n'
+else
+  printf '{"text":"󰋚","tooltip":"xhisper — left click: last transcription, right click: history"}\n'
+fi

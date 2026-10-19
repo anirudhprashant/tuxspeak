@@ -143,6 +143,11 @@ cp /usr/local/share/xhisper/default_xhisperrc ~/.config/xhisper/xhisperrc
 | `non-ascii-initial-delay` | `0.15` | Seconds before the first Unicode paste |
 | `non-ascii-default-delay` | `0.025` | Seconds between Unicode pastes |
 
+## Omarchy
+
+On Omarchy there is an optional top-bar button and themed popup for the last
+dictation and history. See [`omarchy/`](omarchy/README.md).
+
 ## Troubleshooting
 
 | Symptom | Fix |
