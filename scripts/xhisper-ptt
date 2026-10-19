@@ -5,6 +5,7 @@
 LOGFILE="/tmp/xhisper-gemini.log"
 RECORDING="/tmp/xhisper-gemini.wav"
 ALT_UP="/tmp/xhisper-gemini.alt-up"
+PTT_STARTED="/tmp/xhisper-gemini.ptt-started"
 HOLD_DELAY=0.25
 
 recording() { pgrep -f "pw-record.*$RECORDING" > /dev/null; }
@@ -16,6 +17,8 @@ sleep "$HOLD_DELAY"
 [ -e "$ALT_UP" ] && exit 0
 recording && exit 0
 
+# Lets xhisper-altspace know this recording came from the Alt hold, not a toggle
+date +%s.%N > "$PTT_STARTED"
 echo "DEBUG: xhisper-ptt starting (Alt held)" >> "$LOGFILE"
 XHISPER_PTT=1 xhisper-gemini &
 START_PID=$!

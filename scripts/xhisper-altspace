@@ -1,0 +1,19 @@
+#!/bin/bash
+# xhisper-altspace - bound to Alt+Space (toggle dictation).
+# If you hold Alt a little before pressing Space, hold-to-talk (xhisper-ptt) has
+# already started recording. A plain toggle would then stop it straight away, so
+# treat that recording as the one Alt+Space was meant to start: keep it running
+# (stop it later with a lone Alt tap, as usual).
+
+PTT_STARTED="/tmp/xhisper-gemini.ptt-started"
+GRACE=2
+
+if [ -e "$PTT_STARTED" ]; then
+  started=$(cat "$PTT_STARTED" 2>/dev/null)
+  age=$(awk -v s="${started:-0}" -v n="$(date +%s.%N)" 'BEGIN { printf "%d", (n - s) * 1000 }')
+  if [ "$age" -lt $((GRACE * 1000)) ]; then
+    echo "DEBUG: xhisper-altspace: recording already started by Alt hold (${age}ms ago), keeping it" >> /tmp/xhisper-gemini.log
+    exit 0
+  fi
+fi
+exec xhisper-gemini
