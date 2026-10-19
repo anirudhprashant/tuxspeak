@@ -33,3 +33,22 @@ Add a module to the bar in `~/.config/omarchy/shell.json` (use your own home pat
   "tooltip": "xhisper — click: last transcription, right click: history"
 }
 ```
+
+## Keyboard shortcut (optional)
+
+Open/close the last-dictation popup with Super+I. Add to `~/.config/hypr/bindings.lua`
+(check `hyprctl binds` first; plain Super+I is unused on stock Omarchy, whereas Super+X
+is "Universal cut"):
+
+```lua
+o.bind("SUPER + I", "TuxSpeak last dictation", "/home/YOU/.config/omarchy/bar/scripts/xhisper-last")
+```
+
+## No fade-in (optional)
+
+Hyprland fades layer-shell surfaces in by default. To make the popup appear instantly,
+add to `~/.config/hypr/looknfeel.lua`:
+
+```lua
+hl.layer_rule({ match = { namespace = "^xhisper(-catcher)?$" }, no_anim = true, animation = "none" })
+```
