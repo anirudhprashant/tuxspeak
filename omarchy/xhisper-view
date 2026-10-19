@@ -67,7 +67,8 @@ def entries():
 
 def css(c):
     return f"""
-window.xh, window.catcher {{ background: transparent; }}
+window.xh {{ background: transparent; }}
+window.catcher {{ background: rgba(0, 0, 0, 0.01); }}
 .card-root {{
   background: {c['background']}; color: {c['bright_foreground']};
   border: 1px solid {c['muted']}; border-radius: 16px;
@@ -129,7 +130,7 @@ class App(Gtk.Application):
         self.catcher.add_css_class("catcher")
         LS.init_for_window(self.catcher)
         LS.set_namespace(self.catcher, "xhisper-catcher")
-        LS.set_layer(self.catcher, LS.Layer.TOP)
+        LS.set_layer(self.catcher, LS.Layer.OVERLAY)
         for e in (LS.Edge.TOP, LS.Edge.BOTTOM, LS.Edge.LEFT, LS.Edge.RIGHT):
             LS.set_anchor(self.catcher, e, True)
         LS.set_exclusive_zone(self.catcher, -1)
@@ -137,7 +138,10 @@ class App(Gtk.Application):
         click = Gtk.GestureClick()
         click.connect("pressed", lambda *_: self.quit())
         self.catcher.add_controller(click)
-        self.catcher.set_child(Gtk.Box())
+        fill = Gtk.Box()
+        fill.set_hexpand(True)
+        fill.set_vexpand(True)
+        self.catcher.set_child(fill)
         self.catcher.present()
         self.show(self.start)
 
@@ -168,7 +172,9 @@ class App(Gtk.Application):
         LS.set_anchor(win, LS.Edge.RIGHT, True)
         LS.set_margin(win, LS.Edge.BOTTOM, 24)
         LS.set_margin(win, LS.Edge.RIGHT, 24)
-        LS.set_keyboard_mode(win, LS.KeyboardMode.EXCLUSIVE)
+        # ON_DEMAND, not EXCLUSIVE: an exclusive grab makes Hyprland route all pointer
+        # input to the popup, so the click-catcher would never see an outside click.
+        LS.set_keyboard_mode(win, LS.KeyboardMode.ON_DEMAND)
 
         keys = Gtk.EventControllerKey()
         keys.connect("key-pressed", self.on_key)
